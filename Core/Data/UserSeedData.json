@@ -1,0 +1,26 @@
+[
+    {
+      "UserName": "Ali",
+      "Position": "Manager",
+      "FullName": "Ali Emad",
+      "DateOfBirth": "1975-09-19T00:00:00Z",
+      "Created": "2019-06-09T00:00:00Z",
+      "LastActive": "2020-06-04T00:00:00Z"
+    },
+    {
+      "UserName": "Ibraheem",
+      "Position": "Residnce User",
+      "FullName": "Ibraheem Anmaar",
+      "DateOfBirth": "1975-09-19T00:00:00Z",
+      "Created": "2019-06-09T00:00:00Z",
+      "LastActive": "2020-06-04T00:00:00Z"
+    },
+    {
+      "UserName": "Mohsin",
+      "Position": "PM",
+      "FullName": "Mohsin Ali",
+      "DateOfBirth": "1975-09-19T00:00:00Z",
+      "Created": "2019-06-09T00:00:00Z",
+      "LastActive": "2020-06-04T00:00:00Z"
+    }
+]
