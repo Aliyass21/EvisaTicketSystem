@@ -1,37 +1,47 @@
+using EVisaTicketSystem.Core.Entities;
+using EVisaTicketSystem.Core.Persistence;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace EVisaTicketSystem.Core.Data
 {
-    public class DataContext : DbContext
+   public class DataContext(DbContextOptions options) : IdentityDbContext<AppUser, AppRole, Guid,
+    IdentityUserClaim<Guid>, AppUserRole, IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>,
+    IdentityUserToken<Guid>>(options)
+{
+    public DbSet<AppUser> Users { get; set; }
+    
+
+    protected override void OnModelCreating(ModelBuilder builder) 
     {
-        public DataContext(DbContextOptions<DataContext> options) : base(options)
-        {
-        }
+        base.OnModelCreating(builder);
 
-        public DbSet<Ticket> Tickets { get; set; }
+        builder.Entity<AppUser>()
+            .HasMany(ur => ur.UserRoles)
+            .WithOne(u => u.User)
+            .HasForeignKey(ur => ur.UserId)
+            .IsRequired();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Ticket>(entity =>
-            {
-                entity.HasKey(t => t.Id);
+        builder.Entity<AppRole>()
+            .HasMany(ur => ur.UserRoles)
+            .WithOne(u => u.Role)
+            .HasForeignKey(ur => ur.RoleId)
+            .IsRequired();
 
-                entity.Property(t => t.TicketNumber)
-                      .IsRequired()
-                      .HasMaxLength(50);
+        
+        builder.ApplyConfiguration(new TicketConfiguration());
+        builder.ApplyConfiguration(new TicketActionConfiguration());
+        builder.ApplyConfiguration(new TicketAttachmentConfiguration());
+        builder.ApplyConfiguration(new TicketTypeConfiguration());
+        
+        builder.ApplyConfigurationsFromAssembly(typeof(DataContext).Assembly);
 
-                entity.Property(t => t.Title)
-                      .IsRequired()
-                      .HasMaxLength(255);
 
-                entity.Property(t => t.Description)
-                      .HasMaxLength(1000);
-
-                entity.Property(t => t.CreatedAt)
-                      .HasDefaultValueSql("CURRENT_TIMESTAMP");
-            });
-
-            base.OnModelCreating(modelBuilder);
-        }
+       
     }
+
+
+}
+
 }
