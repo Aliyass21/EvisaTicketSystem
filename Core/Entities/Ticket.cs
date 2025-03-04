@@ -11,8 +11,11 @@ public class Ticket :Entity
         public string? Description { get; set; }
         public required TicketStatus Status { get; set; }
         public required TicketStage CurrentStage { get; set; }
+
+        public required Guid TicketTypeId { get; set; }
         public required Guid CreatedById { get; set; }
         public Guid? AssignedToId { get; set; }
+        public TicketType TicketType { get; set; } = null!;
         public AppUser AssignedTo { get; set; } = null!;
         public AppUser CreatedBy { get; set; } = null!;
 

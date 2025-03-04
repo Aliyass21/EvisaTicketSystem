@@ -15,6 +15,12 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.Property(t => t.Title).IsRequired().HasMaxLength(200);
         builder.Property(t => t.Description).HasMaxLength(1000);
 
+
+        builder.HasOne(t => t.TicketType)
+            .WithMany()
+            .HasForeignKey(t => t.TicketTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(t => t.CreatedBy)
             .WithMany()
             .HasForeignKey(t => t.CreatedById)
