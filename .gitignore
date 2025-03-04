@@ -1,0 +1,36 @@
+# Exclude bin and obj folders
+bin/
+obj/
+
+# Exclude build artifacts
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# Exclude NuGet packages
+*.nupkg
+project.lock.json
+*.nuget.props
+*.nuget.g.targets
+
+# Exclude Visual Studio temporary files, build logs, etc.
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Exclude Rider/JetBrains IDE files
+.idea/
+
+# Exclude system files
+*.DS_Store
+*.Thumbs.db
+
+# Exclude Migrations
+.Migrations/
+Migrations/
+# Exclude publish folder
+/publish/
+

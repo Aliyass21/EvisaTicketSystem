@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    depends_on:
+      - db
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Database=evisaticket;Username=postgres;Password=postgres
+    volumes:
+      - ./:/app
+    networks:
+      - evisa-network
+
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres2
+      - POSTGRES_PASSWORD=postgres2
+      - POSTGRES_DB=evisaticket
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - evisa-network
+
+networks:
+  evisa-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
