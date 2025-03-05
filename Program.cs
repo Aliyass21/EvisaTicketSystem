@@ -1,5 +1,6 @@
 using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.Entities;
+using EVisaTicketSystem.Core.Middleware;
 using EVisaTicketSystem.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionMiddleware>();
 
 
 app.UseHttpsRedirection();

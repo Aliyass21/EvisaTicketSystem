@@ -1,5 +1,7 @@
 using System;
 using EVisaTicketSystem.Core.Data;
+using EVisaTicketSystem.Core.Helpers;
+using EVisaTicketSystem.Core.Interfaces;
 using EVisaTicketSystem.Interfaces;
 using EVisaTicketSystem.Services;
 
@@ -13,6 +15,8 @@ public static class ApplicationServiceExtensions
        services.AddScoped<ITokenService, TokenService>();
        services.AddScoped<IUserRepository, UserRepository>();
        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+       services.AddScoped<LogUserActivity>();
+       services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 
     //    services.AddDbContext<DataContext>(opt =>

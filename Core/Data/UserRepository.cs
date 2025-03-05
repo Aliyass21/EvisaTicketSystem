@@ -9,7 +9,7 @@ namespace EVisaTicketSystem.Core.Data;
 public class UserRepository(DataContext context,IMapper mapper) : IUserRepository
 {
 
-    public async Task<AppUser?> GetUserByIdAsync(int id)
+    public async Task<AppUser?> GetUserByIdAsync(Guid id)
     {
         return await  context.Users.FindAsync(id);
     }

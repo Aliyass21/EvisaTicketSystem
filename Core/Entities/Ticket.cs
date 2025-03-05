@@ -15,10 +15,12 @@ public class Ticket :Entity
         public required Guid TicketTypeId { get; set; }
         public required Guid CreatedById { get; set; }
         public Guid? AssignedToId { get; set; }
+        public Guid? OfficeId { get; set; }
+
         public TicketType TicketType { get; set; } = null!;
         public AppUser AssignedTo { get; set; } = null!;
         public AppUser CreatedBy { get; set; } = null!;
-
+        public Office Office { get; set; } = null!;
         public ICollection<TicketAction> Actions  { get; set; } = [];
         public ICollection<TicketAttachment> Attachments { get; set; } =[];
 
