@@ -28,5 +28,6 @@ public class UserRepository(DataContext context,IMapper mapper) : IUserRepositor
     {
         context.Entry(user).State = EntityState.Modified;
     }
+    
 }
 

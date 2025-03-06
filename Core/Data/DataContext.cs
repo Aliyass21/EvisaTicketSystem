@@ -11,6 +11,10 @@ namespace EVisaTicketSystem.Core.Data
     IdentityUserToken<Guid>>(options)
 {
     public DbSet<AppUser> Users { get; set; }
+    public DbSet<Office> Offices { get; set; }
+    public DbSet<Ticket> Tickets { get; set; }
+    public DbSet<TicketType> TicketTypes { get; set; }
+
     
 
     protected override void OnModelCreating(ModelBuilder builder) 

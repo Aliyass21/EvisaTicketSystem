@@ -1,5 +1,5 @@
-using System;
 using AutoMapper;
+using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
 
@@ -12,6 +12,9 @@ public class AutoMapperProfiles : Profile
 
 
         CreateMap<RegisterDto,AppUser>();
+        CreateMap<TicketDto,Ticket>();
+        CreateMap<TicketTypeDto,TicketType>();
+        CreateMap<OfficeDto,Office>();
         CreateMap<string, DateOnly>().ConvertUsing(s => DateOnly.Parse(s));
         CreateMap<DateTime, DateTime>().ConvertUsing(d => DateTime.SpecifyKind(d, DateTimeKind.Utc));
         CreateMap<DateTime?, DateTime?>().ConvertUsing(d => d.HasValue 

@@ -24,6 +24,7 @@ public class Seed
             new() {Name = "SubAdmin"},
             new() {Name = "Admin"},
             new() {Name = "ScopeSky"},
+            
         };
 
         foreach (var role in roles)
