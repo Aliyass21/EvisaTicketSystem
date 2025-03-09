@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.Enums;
 
@@ -20,7 +21,8 @@ public class TicketAction :Entity
         public TicketStage? PreviousStage { get; set; }
         
         public TicketStage? NewStage { get; set; }
-
+        [JsonIgnore] // Prevent circular reference
         public Ticket Ticket { get; set; } = null!;
+        [JsonIgnore] // Prevent circular reference
         public AppUser User { get; set; } = null!;
     }

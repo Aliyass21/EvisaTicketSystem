@@ -2,7 +2,9 @@ using System;
 using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.Helpers;
 using EVisaTicketSystem.Core.Interfaces;
+using EVisaTicketSystem.Core.Services;
 using EVisaTicketSystem.Infrastructure.Repositories;
+using EVisaTicketSystem.Infrastructure.Services;
 using EVisaTicketSystem.Interfaces;
 using EVisaTicketSystem.Services;
 
@@ -17,6 +19,9 @@ public static class ApplicationServiceExtensions
        services.AddScoped<IUserRepository, UserRepository>();
        services.AddScoped<ITicketRepository, TicketRepository>();
        services.AddScoped<ITicketTypeRepository, TicketTypeRepository>(); // Add this line
+       services.AddScoped<ITicketAttachmentRepository, TicketAttachmentRepository>();
+       services.AddScoped<ITicketService, TicketService>();
+       services.AddScoped<IPhotoService, PhotoService>();
        services.AddScoped<IOfficeRepository, OfficeRepository>(); // Add this line
        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
        services.AddScoped<LogUserActivity>();

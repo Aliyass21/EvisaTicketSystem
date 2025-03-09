@@ -49,12 +49,14 @@ namespace EVisaTicketSystem.Infrastructure.Repositories
                 CreatedById = ticketDto.CreatedById,
                 AssignedToId = ticketDto.AssignedToId,
                 OfficeId = ticketDto.OfficeId,
-                ClosedAt = ticketDto.ClosedAt
+                ClosedAt = ticketDto.ClosedAt,
+                Priority = ticketDto.Priority // Make sure TicketDto has this property
             };
 
             _context.Tickets.Add(ticket);
             return Task.FromResult(ticket);
         }
+
 
         public Task<Ticket> UpdateAsync(Ticket ticket)
         {

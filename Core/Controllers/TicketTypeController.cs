@@ -2,6 +2,7 @@ using EVisaTicketSystem.Core.Controllers;
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
 using EVisaTicketSystem.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // GET: api/TicketType
         [HttpGet]
+        [Authorize]
+
         public async Task<ActionResult<IEnumerable<TicketType>>> GetTicketTypes()
         {
             var ticketTypes = await _unitOfWork.TicketTypeRepository.GetAllAsync();
@@ -28,6 +31,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // GET: api/TicketType/{id}
         [HttpGet("{id}")]
+        [Authorize]
+
         public async Task<ActionResult<TicketType>> GetTicketType(Guid id)
         {
             var ticketType = await _unitOfWork.TicketTypeRepository.GetByIdAsync(id);
@@ -40,6 +45,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // POST: api/TicketType
         [HttpPost]
+        [Authorize(Policy ="RequireAdminRole")]
+
         public async Task<ActionResult<TicketType>> CreateTicketType([FromBody] TicketTypeDto ticketTypeDto)
         {
             var createdTicketType = await _unitOfWork.TicketTypeRepository.CreateAsync(ticketTypeDto);
@@ -49,6 +56,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // PUT: api/TicketType/{id}
         [HttpPut("{id}")]
+        [Authorize(Policy ="RequireAdminRole")]
+
         public async Task<IActionResult> UpdateTicketType(Guid id, [FromBody] TicketTypeDto ticketTypeDto)
         {
             var existingTicketType = await _unitOfWork.TicketTypeRepository.GetByIdAsync(id);
@@ -68,6 +77,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // DELETE: api/TicketType/{id}
         [HttpDelete("{id}")]
+        [Authorize(Policy ="RequireAdminRole")]
+
         public async Task<IActionResult> DeleteTicketType(Guid id)
         {
             await _unitOfWork.TicketTypeRepository.DeleteAsync(id);

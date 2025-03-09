@@ -12,8 +12,6 @@ public class TicketAttachmentConfiguration : IEntityTypeConfiguration<TicketAtta
         builder.HasKey(ta => ta.Id);
 
         builder.Property(ta => ta.FilePath).IsRequired();
-        builder.Property(ta => ta.FileName).HasMaxLength(255);
-
         builder.HasOne(ta => ta.Ticket)
             .WithMany(t => t.Attachments)
             .HasForeignKey(ta => ta.TicketId)

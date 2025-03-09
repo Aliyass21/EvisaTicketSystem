@@ -14,6 +14,10 @@ namespace EVisaTicketSystem.Core.Data
     public DbSet<Office> Offices { get; set; }
     public DbSet<Ticket> Tickets { get; set; }
     public DbSet<TicketType> TicketTypes { get; set; }
+    public DbSet<TicketAction> TicketActions { get; set; }
+    public DbSet<TicketAttachment> TicketAttachments { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+
 
     
 
