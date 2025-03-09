@@ -187,19 +187,19 @@ internal (TicketStatus, TicketStage) GetNextState(
     string role)
 {
     // Transition: New → InReview (Submission by ResidenceUser)
-    if (currentStatus == TicketStatus.New && role == "Admin" && actionType == TicketActionType.StatusChanged)
+    if (currentStatus == TicketStatus.New && role == "SubAdmin" && actionType == TicketActionType.StatusChanged)
     {
         return (TicketStatus.InReview, TicketStage.SubAdmin);
     }
 
     // Transition: InReview → Escalated (Escalation by SubAdmin)
-    if (currentStatus == TicketStatus.InReview && role == "Admin" && actionType == TicketActionType.Escalated)
+    if (currentStatus == TicketStatus.InReview && role == "SubAdmin" && actionType == TicketActionType.Escalated)
     {
         return (TicketStatus.Escalated, TicketStage.SystemAdmin);
     }
 
     // Transition: InReview → Returned (Ticket is sent back for corrections)
-    if (currentStatus == TicketStatus.InReview && role == "Admin" && actionType == TicketActionType.Returned)
+    if (currentStatus == TicketStatus.InReview && role == "SubAdmin" && actionType == TicketActionType.Returned)
     {
         return (TicketStatus.Returned, TicketStage.ResidenceUser);
     }
@@ -237,19 +237,19 @@ internal (TicketStatus, TicketStage) GetNextState(
     }
 
     // Transition: Rejected → InReview (Resubmission by ResidenceUser)
-    if (currentStatus == TicketStatus.Rejected && role == "Admin" && actionType == TicketActionType.StatusChanged)
+    if (currentStatus == TicketStatus.Rejected && role == "SubAdmin" && actionType == TicketActionType.StatusChanged)
     {
         return (TicketStatus.InReview, TicketStage.SubAdmin);
     }
 
     // Transition: Returned → InReview (Resubmission by ResidenceUser)
-    if (currentStatus == TicketStatus.Returned && role == "Admin" && actionType == TicketActionType.StatusChanged)
+    if (currentStatus == TicketStatus.Returned && role == "SubAdmin" && actionType == TicketActionType.StatusChanged)
     {
         return (TicketStatus.InReview, TicketStage.SubAdmin);
     }
 
     // Transition: Resolved → Closed (Closing by ScopeSky)
-    if (currentStatus == TicketStatus.Resolved && role == "Admin" && actionType == TicketActionType.Closed)
+    if (currentStatus == TicketStatus.Resolved && role == "ScopeSky" && actionType == TicketActionType.Closed)
     {
         return (TicketStatus.Closed, TicketStage.ScopeSky);
     }
