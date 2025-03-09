@@ -25,8 +25,9 @@ public class Ticket :Entity
         public AppUser AssignedTo { get; set; } = null!;
         public AppUser CreatedBy { get; set; } = null!;
         public Office Office { get; set; } = null!;
-        public ICollection<TicketAction> Actions  { get; set; } = [];
-        public ICollection<TicketAttachment> Attachments { get; set; } =[];
+        public ICollection<TicketAction> Actions { get; set; } = new List<TicketAction>();
+        public ICollection<TicketAttachment> Attachments { get; set; } = new List<TicketAttachment>();
+
 
         public DateTime? ClosedAt { get; set; }
 

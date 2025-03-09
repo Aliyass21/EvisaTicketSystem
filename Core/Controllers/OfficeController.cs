@@ -2,6 +2,7 @@ using EVisaTicketSystem.Core.Controllers;
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
 using EVisaTicketSystem.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // GET: api/Office
         [HttpGet]
+        [Authorize]
+
         public async Task<ActionResult<IEnumerable<Office>>> GetOffices()
         {
             var offices = await _unitOfWork.OfficeRepository.GetAllAsync();
@@ -28,6 +31,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // GET: api/Office/{id}
         [HttpGet("{id}")]
+        [Authorize]
+
         public async Task<ActionResult<Office>> GetOffice(Guid id)
         {
             var office = await _unitOfWork.OfficeRepository.GetByIdAsync(id);
@@ -40,6 +45,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // POST: api/Office
         [HttpPost]
+        [Authorize(Policy ="RequireAdminRole")]
+
         public async Task<ActionResult<Office>> CreateOffice([FromBody] OfficeDto officeDto)
         {
             var createdOffice = await _unitOfWork.OfficeRepository.CreateAsync(officeDto);
@@ -49,6 +56,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // PUT: api/Office/{id}
         [HttpPut("{id}")]
+        [Authorize(Policy ="RequireAdminRole")]
+
         public async Task<IActionResult> UpdateOffice(Guid id, [FromBody] OfficeDto officeDto)
         {
             var existingOffice = await _unitOfWork.OfficeRepository.GetByIdAsync(id);
@@ -68,6 +77,8 @@ namespace EVisaTicketSystem.API.Controllers
 
         // DELETE: api/Office/{id}
         [HttpDelete("{id}")]
+        [Authorize(Policy ="RequireAdminRole")]
+
         public async Task<IActionResult> DeleteOffice(Guid id)
         {
             await _unitOfWork.OfficeRepository.DeleteAsync(id);
