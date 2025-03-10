@@ -48,15 +48,21 @@ namespace EVisaTicketSystem.API.Controllers
                 return Ok(ticketDto);
             }
 
-
         // POST: api/Ticket (Create by ResidenceUser)
         [HttpPost]
-        [Authorize(Policy = "SubAdminRole")]
+        [Authorize(Policy = "RequireResidenceUser")]
         public async Task<IActionResult> CreateTicket([FromForm] TicketCreateDto ticketDto)
         {
-            await _ticketService.CreateTicketAsync(ticketDto);
-            return Ok(new { message = "Ticket created successfully" });
+            var createdTicket = await _ticketService.CreateTicketAsync(ticketDto);
+
+            // Return a JSON response with the new ticket ID
+            return Ok(new 
+            {
+                message = "Ticket created successfully",
+                ticketId = createdTicket.Id
+            });
         }
+
         //PUT:api/Ticket/{guid}
         [HttpPut("{id}")]
         [Authorize(Policy = "RequireAdminRole")]
@@ -77,7 +83,7 @@ namespace EVisaTicketSystem.API.Controllers
 
         // POST: api/Ticket/{id}/submit (ResidenceUser)
         [HttpPost("{id}/inreview")]
-        [Authorize(Policy ="SubAdminRole")]
+        [Authorize(Policy ="RequireResidenceUser")]
 
         //[Authorize(Roles = "ResidenceUser")]
         public async Task<IActionResult> SubmitTicket(Guid id, [FromBody] string notes)

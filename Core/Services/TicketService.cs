@@ -7,6 +7,7 @@ using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
 using EVisaTicketSystem.Core.Enums;
 using EVisaTicketSystem.Core.Interfaces;
+using EVisaTicketSystem.Specifcation;
 using Microsoft.AspNetCore.Http;
 
 namespace EVisaTicketSystem.Core.Services
@@ -17,13 +18,13 @@ namespace EVisaTicketSystem.Core.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPhotoService _photoService; // Inject your photo service
 
-        public TicketService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor,IPhotoService photoService)
+        public TicketService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor,IPhotoService photoService  )
         {
             _unitOfWork = unitOfWork;
             _httpContextAccessor = httpContextAccessor;
-            _photoService = photoService;
-
+            _photoService = photoService;     
         }
+        
 
         // Helper method to get the current user's ID
         private Guid GetCurrentUserId()
@@ -303,7 +304,8 @@ internal (TicketStatus, TicketStage) GetNextState(
     string role)
 {
     // Transition: New → InReview (Submission by ResidenceUser)
-    if (currentStatus == TicketStatus.New && role == "SubAdmin" && actionType == TicketActionType.StatusChanged)
+    if (currentStatus == TicketStatus.New     && (role == "SubAdmin" || role == "ResidenceUser") 
+ && actionType == TicketActionType.StatusChanged)
     {
         return (TicketStatus.InReview, TicketStage.SubAdmin);
     }
@@ -353,13 +355,13 @@ internal (TicketStatus, TicketStage) GetNextState(
     }
 
     // Transition: Rejected → InReview (Resubmission by ResidenceUser)
-    if (currentStatus == TicketStatus.Rejected && role == "SubAdmin" && actionType == TicketActionType.StatusChanged)
+    if (currentStatus == TicketStatus.Rejected && (role == "SubAdmin" || role == "ResidenceUser") && actionType == TicketActionType.StatusChanged)
     {
         return (TicketStatus.InReview, TicketStage.SubAdmin);
     }
 
     // Transition: Returned → InReview (Resubmission by ResidenceUser)
-    if (currentStatus == TicketStatus.Returned && role == "SubAdmin" && actionType == TicketActionType.StatusChanged)
+    if (currentStatus == TicketStatus.Returned  && (role == "SubAdmin" || role == "ResidenceUser") && actionType == TicketActionType.StatusChanged)
     {
         return (TicketStatus.InReview, TicketStage.SubAdmin);
     }

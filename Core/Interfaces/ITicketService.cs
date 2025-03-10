@@ -1,6 +1,7 @@
 using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Enums;
+using EVisaTicketSystem.Specifcation;
 using System.Threading.Tasks;
 
 namespace EVisaTicketSystem.Core.Interfaces
@@ -14,7 +15,6 @@ namespace EVisaTicketSystem.Core.Interfaces
         Task DeleteTicketAsync(Guid id);
         Task ApproveTicketAsync(Guid ticketId, string notes);
         Task<Ticket> UpdateTicketDetailsAsync(Guid ticketId, TicketUpdateDto updateDto);
-
 
 
     }

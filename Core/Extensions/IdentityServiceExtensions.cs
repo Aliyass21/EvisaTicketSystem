@@ -56,7 +56,9 @@ public static class IdentityServiceExtensions
         services.AddAuthorizationBuilder()
             .AddPolicy("RequireAdminRole",policy => policy.RequireRole("Admin"))
             .AddPolicy("SubAdminRole", policy => policy.RequireRole("Admin","SubAdmin"))
-            .AddPolicy("ScopeSky", policy => policy.RequireRole("Admin","ScopeSky"));
+            .AddPolicy("ScopeSky", policy => policy.RequireRole("Admin","ScopeSky"))
+            .AddPolicy("RequireResidenceUser", policy => policy.RequireRole("ResidenceUser","Admin","SubAdmin"));
+
 
         
 
