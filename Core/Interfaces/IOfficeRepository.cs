@@ -1,5 +1,6 @@
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
+using EVisaTicketSystem.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,5 +16,7 @@ namespace EVisaTicketSystem.Core.Interfaces
         Task<Office> CreateAsync(OfficeDto officeDto);
         Task<Office> UpdateAsync(Office office);
         Task DeleteAsync(Guid id);
+        Task<IEnumerable<Office>> GetByTypeAsync(OfficeType officeType);
+
     }
 }

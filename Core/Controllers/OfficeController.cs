@@ -1,6 +1,7 @@
 using EVisaTicketSystem.Core.Controllers;
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
+using EVisaTicketSystem.Core.Enums;
 using EVisaTicketSystem.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,6 +43,24 @@ namespace EVisaTicketSystem.API.Controllers
             }
             return Ok(office);
         }
+                // POST: api/Office/GetByType
+        [HttpPost("GetByType")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<Office>>> GetOfficesByType([FromBody] OfficeTypeRequestDto request)
+        {
+            // Validate the provided office type against the OfficeType enum.
+            if (!Enum.IsDefined(typeof(OfficeType), request.Type))
+            {
+                return BadRequest("Invalid office type provided.");
+            }
+
+            // Convert the integer to the OfficeType enum.
+            OfficeType officeType = (OfficeType)request.Type;
+
+            // Ensure your repository has a method like GetByTypeAsync.
+            var offices = await _unitOfWork.OfficeRepository.GetByTypeAsync(officeType);
+            return Ok(offices);
+        }
 
         // POST: api/Office
         [HttpPost]
@@ -53,6 +72,7 @@ namespace EVisaTicketSystem.API.Controllers
             await _unitOfWork.Complete(); // Commit changes to the database
             return CreatedAtAction(nameof(GetOffice), new { id = createdOffice.Id }, createdOffice);
         }
+        
 
         // PUT: api/Office/{id}
         [HttpPut("{id}")]

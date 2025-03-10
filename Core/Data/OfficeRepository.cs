@@ -1,6 +1,7 @@
 using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
+using EVisaTicketSystem.Core.Enums;
 using EVisaTicketSystem.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -60,6 +61,12 @@ namespace EVisaTicketSystem.Infrastructure.Repositories
             {
                 _context.Offices.Remove(office);
             }
+        }
+         public async Task<IEnumerable<Office>> GetByTypeAsync(OfficeType officeType)
+        {
+            return await _context.Offices
+                                 .Where(o => o.OfficeType == officeType)
+                                 .ToListAsync();
         }
     }
 }
