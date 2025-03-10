@@ -59,66 +59,181 @@ private string GetUserRole()
 
     throw new InvalidOperationException("User role not found.");
 }
+public async Task ApproveTicketAsync(Guid ticketId, string notes)
+{
+    // Retrieve the ticket by its id
+    var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);
+    if (ticket == null)
+    {
+        throw new Exception("Ticket not found.");
+    }
+
+    // Get the current user's id (approver's id)
+    var approverId = GetCurrentUserId();
+
+    // Update the AssignedToId so that the ticket is now assigned to the approver
+    ticket.AssignedToId = approverId;
+
+    // Optionally log the approval action. You can define a new action type called Approved
+
+    // Update the ticket via the repository and commit the changes
+    await _unitOfWork.TicketRepository.UpdateAsync(ticket);
+    await _unitOfWork.Complete();
+}
+public async Task<Ticket> UpdateTicketDetailsAsync(Guid ticketId, TicketUpdateDto updateDto)
+{
+    // Retrieve the ticket
+    var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);
+    if (ticket == null)
+    {
+        throw new Exception("Ticket not found.");
+    }
+
+    // Update fields only if a new value is provided
+    if (!string.IsNullOrEmpty(updateDto.Title))
+    {
+        ticket.Title = updateDto.Title;
+    }
+    if (!string.IsNullOrEmpty(updateDto.Description))
+    {
+        ticket.Description = updateDto.Description;
+    }
+    if (updateDto.TicketTypeId.HasValue)
+    {
+        ticket.TicketTypeId = updateDto.TicketTypeId.Value;
+    }
+    if (updateDto.OfficeId.HasValue)
+    {
+        ticket.OfficeId = updateDto.OfficeId.Value;
+    }
+    // Process the attachment if provided
+    if (updateDto.Attachment != null)
+    {
+        // Assuming _photoService.AddPhotoAsync returns an object with a FilePath property.
+        var uploadResult = await _photoService.AddPhotoAsync(updateDto.Attachment, ticket.Id);
+        // Optionally update existing attachment or add new
+        // For simplicity, let's add it as a new attachment:
+        var attachment = new TicketAttachment
+        {
+            TicketId = ticket.Id,
+            FilePath = uploadResult.FilePath
+        };
+        ticket.Attachments.Add(attachment);
+    }
+
+    await _unitOfWork.TicketRepository.UpdateAsync(ticket);
+    await _unitOfWork.Complete();
+
+    return ticket;
+}
+
+
+
+private async Task<string> GetNextTicketNumberAsync()
+{
+    // Fetch the most recently created ticket.
+    // You might need to implement a method like GetLastTicketAsync in your repository
+    // that orders by TicketNumber or creation date.
+    var lastTicket = await _unitOfWork.TicketRepository.GetLastTicketAsync();
+
+    if (lastTicket == null || string.IsNullOrEmpty(lastTicket.TicketNumber))
+    {
+        // If no tickets exist, start with TCKT001
+        return "TCKT001";
+    }
+
+    // Assuming the TicketNumber is in the format "TCKT" + 3-digit number
+    var prefix = "TCKT";
+    var numericPart = lastTicket.TicketNumber.Replace(prefix, "");
+
+    if (int.TryParse(numericPart, out int lastNumber))
+    {
+        // Increment and pad with zeros (assuming you want 3-digit formatting)
+        return $"{prefix}{(lastNumber + 1).ToString("D3")}";
+    }
+    else
+    {
+        // Fallback in case parsing fails.
+        return $"{prefix}001";
+    }
+}
+
 
 
         // Create a new ticket using a TicketDto
          // Create a new ticket using TicketCreateDto
-        public async Task<Ticket> CreateTicketAsync(TicketCreateDto ticketDto)
+public async Task<Ticket> CreateTicketAsync(TicketCreateDto ticketDto)
+{
+    if (ticketDto.CreatedById == Guid.Empty)
+    {
+        ticketDto.CreatedById = GetCurrentUserId();
+    }
+
+    // Generate the ticket number in the backend
+    var generatedTicketNumber = await GetNextTicketNumberAsync();
+
+    // Map properties from the DTO to a new Ticket and assign the generated TicketNumber
+    var ticket = new Ticket
+    {
+        TicketNumber = generatedTicketNumber,
+        Title = ticketDto.Title,
+        Description = ticketDto.Description,
+        Status = ticketDto.Status,
+        CurrentStage = ticketDto.CurrentStage,
+        Priority = ticketDto.Priority,
+        TicketTypeId = ticketDto.TicketTypeId,
+        CreatedById = ticketDto.CreatedById,
+        AssignedToId = ticketDto.AssignedToId,
+        OfficeId = ticketDto.OfficeId,
+        ClosedAt = ticketDto.ClosedAt
+    };
+
+    // Create the ticket via repository
+    await _unitOfWork.TicketRepository.CreateAsync(ticket);
+
+    // Log the Created action
+    var createdAction = new TicketAction
+    {
+        TicketId = ticket.Id,
+        UserId = ticketDto.CreatedById,
+        ActionType = TicketActionType.Created,
+        ActionDate = DateTime.UtcNow,
+        Notes = "Ticket created.",
+        NewStatus = ticket.Status,
+        NewStage = ticket.CurrentStage
+    };
+
+    ticket.Actions.Add(createdAction);
+
+    // If an attachment file is provided, process it.
+    if (ticketDto.Attachment != null)
+    {
+        var uploadResult = await _photoService.AddPhotoAsync(ticketDto.Attachment, ticket.Id);
+        var attachment = new TicketAttachment
         {
-            if (ticketDto.CreatedById == Guid.Empty)
+            TicketId = ticket.Id,
+            FilePath = uploadResult.FilePath
+        };
+
+        ticket.Attachments.Add(attachment);
+    }
+
+    await _unitOfWork.Complete();
+    return ticket;
+}
+        public async Task DeleteTicketAsync(Guid id)
+        {
+            // Optionally check if the ticket exists first.
+            var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(id);
+            if (ticket == null)
             {
-                ticketDto.CreatedById = GetCurrentUserId();
+                throw new Exception("Ticket not found.");
             }
-
-            // Map properties from the DTO to a new Ticket
-            var ticket = new Ticket
-            {
-                TicketNumber = ticketDto.TicketNumber,
-                Title = ticketDto.Title,
-                Description = ticketDto.Description,
-                Status = ticketDto.Status,
-                CurrentStage = ticketDto.CurrentStage,
-                Priority = ticketDto.Priority,
-                TicketTypeId = ticketDto.TicketTypeId,
-                CreatedById = ticketDto.CreatedById,
-                AssignedToId = ticketDto.AssignedToId,
-                OfficeId = ticketDto.OfficeId,
-                ClosedAt = ticketDto.ClosedAt
-            };
-
-            // Create the ticket via repository
-            await _unitOfWork.TicketRepository.CreateAsync(ticket);
-
-            // Log the Created action
-            var createdAction = new TicketAction
-            {
-                TicketId = ticket.Id,
-                UserId = ticketDto.CreatedById,
-                ActionType = TicketActionType.Created,
-                ActionDate = DateTime.UtcNow,
-                Notes = "Ticket created.",
-                NewStatus = ticket.Status,
-                NewStage = ticket.CurrentStage
-            };
-
-            ticket.Actions.Add(createdAction);
-
-            // If an attachment file is provided, process it.
-            if (ticketDto.Attachment != null)
-            {
-                var uploadResult = await _photoService.AddPhotoAsync(ticketDto.Attachment, ticket.Id);
-                var attachment = new TicketAttachment
-                {
-                    TicketId = ticket.Id,
-                    FilePath = uploadResult.FilePath
-                };
-
-                ticket.Attachments.Add(attachment);
-            }
-
+            
+            await _unitOfWork.TicketRepository.DeleteAsync(id);
             await _unitOfWork.Complete();
-            return ticket;
         }
+
         // Get ticket by Id
         public async Task<Ticket> GetTicketByIdAsync(Guid id)
         {
@@ -132,6 +247,7 @@ private string GetUserRole()
         }
 
         // Update ticket (FSM Transition)
+        
 public async Task UpdateTicketAsync(Guid ticketId, TicketActionType actionType, string notes = "")
 {
     var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);

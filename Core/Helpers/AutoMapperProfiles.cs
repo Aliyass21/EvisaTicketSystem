@@ -10,7 +10,11 @@ public class AutoMapperProfiles : Profile
     public AutoMapperProfiles()
     {
 
+        CreateMap<AppUser, UserSummaryDto>()
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName));
 
+        CreateMap<Ticket, TicketResponseDto>()
+            .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy));
         CreateMap<RegisterDto,AppUser>();
         CreateMap<TicketDto,Ticket>();
         CreateMap<TicketTypeDto,TicketType>();

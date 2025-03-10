@@ -1,11 +1,7 @@
 using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.DTOs;
-using EVisaTicketSystem.Core.Entities;
 using EVisaTicketSystem.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace EVisaTicketSystem.Infrastructure.Repositories
 {
@@ -18,15 +14,20 @@ namespace EVisaTicketSystem.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Ticket>> GetAllAsync()
-        {
-            return await _context.Tickets.ToListAsync();
-        }
+public async Task<IEnumerable<Ticket>> GetAllAsync()
+{
+    return await _context.Tickets
+        .Include(t => t.CreatedBy) // Ensure CreatedBy is loaded
+        .ToListAsync();
+}
 
-        public async Task<Ticket?> GetByIdAsync(Guid id)
-        {
-            return await _context.Tickets.FindAsync(id);
-        }
+  public async Task<Ticket?> GetByIdAsync(Guid id)
+{
+    return await _context.Tickets
+        .Include(t => t.CreatedBy) // Include the CreatedBy navigation property
+        .FirstOrDefaultAsync(t => t.Id == id);
+}
+
 
         // Create using a Ticket entity
         public Task<Ticket> CreateAsync(Ticket ticket)
@@ -34,6 +35,13 @@ namespace EVisaTicketSystem.Infrastructure.Repositories
             _context.Tickets.Add(ticket);
             return Task.FromResult(ticket);
         }
+        public async Task<Ticket?> GetLastTicketAsync()
+        {
+            return await _context.Tickets
+                .OrderByDescending(t => t.DateCreated) // Replace with your creation timestamp property
+                .FirstOrDefaultAsync();
+        }
+
 
         // Create using a TicketDto
         public Task<Ticket> CreateAsync(TicketDto ticketDto)
@@ -63,6 +71,7 @@ namespace EVisaTicketSystem.Infrastructure.Repositories
             _context.Tickets.Update(ticket);
             return Task.FromResult(ticket);
         }
+        
 
         public async Task DeleteAsync(Guid id)
         {

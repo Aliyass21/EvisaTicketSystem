@@ -5,7 +5,7 @@ namespace EVisaTicketSystem.Core.DTOs
 {
     public class TicketCreateDto
     {
-        public required string TicketNumber { get; set; }
+        //public required string TicketNumber { get; set; }
         public required string Title { get; set; }
         public string? Description { get; set; }
         public required TicketStatus Status { get; set; }

@@ -1,3 +1,4 @@
+using AutoMapper;
 using EVisaTicketSystem.Core.Controllers;
 using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.DTOs;
@@ -12,42 +13,67 @@ namespace EVisaTicketSystem.API.Controllers
     public class TicketController : BaseApiController
     {
         private readonly ITicketService _ticketService;
+        private readonly IMapper _mapper;
 
-        public TicketController(ITicketService ticketService)
+
+        public TicketController(ITicketService ticketService,IMapper mapper)
         {
             _ticketService = ticketService;
+            _mapper = mapper;
+
         }
 
         // GET: api/Ticket
         [HttpGet]
         [Authorize]
-
-        
-        public async Task<ActionResult<IEnumerable<Ticket>>> GetTickets()
+        public async Task<ActionResult<IEnumerable<TicketResponseDto>>> GetTickets()
         {
             var tickets = await _ticketService.GetAllTicketsAsync();
-            return Ok(tickets);
+            var ticketDtos = _mapper.Map<IEnumerable<TicketResponseDto>>(tickets);
+            return Ok(ticketDtos);
         }
 
         // GET: api/Ticket/{id}
-        [HttpGet("{id}")]
-        [Authorize]
+            [HttpGet("{id}")]
+            [Authorize]
+            public async Task<ActionResult<TicketResponseDto>> GetTicket(Guid id)
+            {
+                var ticket = await _ticketService.GetTicketByIdAsync(id);
+                if (ticket == null)
+                {
+                    return NotFound();
+                }
+                
+                var ticketDto = _mapper.Map<TicketResponseDto>(ticket);
+                return Ok(ticketDto);
+            }
 
-        public async Task<ActionResult<Ticket>> GetTicket(Guid id)
-        {
-            var ticket = await _ticketService.GetTicketByIdAsync(id);
-            return ticket == null ? NotFound() : Ok(ticket);
-        }
 
         // POST: api/Ticket (Create by ResidenceUser)
         [HttpPost]
-        [Authorize(Policy ="SubAdminRole")]
-        //[Authorize(Roles = "ResidenceUser")]
-        public async Task<ActionResult<Ticket>> CreateTicket([FromForm] TicketCreateDto ticketDto)
+        [Authorize(Policy = "SubAdminRole")]
+        public async Task<IActionResult> CreateTicket([FromForm] TicketCreateDto ticketDto)
         {
-            var ticket = await _ticketService.CreateTicketAsync(ticketDto);
-            return CreatedAtAction(nameof(GetTicket), new { id = ticket.Id }, ticket);
+            await _ticketService.CreateTicketAsync(ticketDto);
+            return Ok(new { message = "Ticket created successfully" });
         }
+        //PUT:api/Ticket/{guid}
+        [HttpPut("{id}")]
+        [Authorize(Policy = "RequireAdminRole")]
+        public async Task<IActionResult> UpdateTicketDetails(Guid id, [FromForm] TicketUpdateDto updateDto)
+        {
+            try
+            {
+                var updatedTicket = await _ticketService.UpdateTicketDetailsAsync(id, updateDto);
+                return Ok(new { message = "Ticket updated successfully", ticketId = updatedTicket.Id });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
 
         // POST: api/Ticket/{id}/submit (ResidenceUser)
         [HttpPost("{id}/inreview")]
@@ -91,6 +117,22 @@ namespace EVisaTicketSystem.API.Controllers
             await _ticketService.UpdateTicketAsync(id, TicketActionType.Cancelled, notes);
             return NoContent();
         }
+        // POST: api/Ticket/{id}/approve
+[HttpPost("{id}/approve")]
+[Authorize]
+public async Task<IActionResult> ApproveTicket(Guid id, [FromBody] string notes = "")
+{
+    try
+    {
+        await _ticketService.ApproveTicketAsync(id, notes);
+        return NoContent();
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { message = ex.Message });
+    }
+}
+
 
         // // POST: api/Ticket/{id}/approve (SubAdmin)
         // [HttpPost("{id}/approve")]
@@ -136,5 +178,22 @@ namespace EVisaTicketSystem.API.Controllers
             await _ticketService.UpdateTicketAsync(id, TicketActionType.Closed, notes);
             return NoContent();
         }
+        // DELETE: api/Ticket/{id}
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "SubAdminRole")] // Adjust the role or policy as needed
+        public async Task<IActionResult> DeleteTicket(Guid id)
+        {
+            try
+            {
+                await _ticketService.DeleteTicketAsync(id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                // Optionally log the error and return an appropriate error response
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
     }
 }

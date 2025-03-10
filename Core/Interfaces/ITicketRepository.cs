@@ -11,10 +11,13 @@ namespace EVisaTicketSystem.Core.Interfaces
     {
         Task<IEnumerable<Ticket>> GetAllAsync();
         Task<Ticket?> GetByIdAsync(Guid id);
+        
         Task<Ticket> CreateAsync(Ticket ticket);
         // Overload to create a Ticket from a DTO
         Task<Ticket> CreateAsync(TicketDto ticketDto);
         Task<Ticket> UpdateAsync(Ticket ticket);
         Task DeleteAsync(Guid id);
+        Task<Ticket?> GetLastTicketAsync();
+
     }
 }
