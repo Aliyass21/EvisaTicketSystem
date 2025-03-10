@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EVisaTicketSystem.Core.Data;
 
-public class UserRepository(DataContext context,IMapper mapper) : IUserRepository
+public class UserRepository(DataContext context) : IUserRepository
 {
 
     public async Task<AppUser?> GetUserByIdAsync(Guid id)

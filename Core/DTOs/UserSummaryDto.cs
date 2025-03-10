@@ -1,4 +1,4 @@
 public class UserSummaryDto
 {
-    public string FullName { get; set; }
+    public string? FullName { get; set; }
 }
