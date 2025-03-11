@@ -98,7 +98,7 @@ public async Task<IActionResult> SearchTickets([FromBody] TicketSearchParams sea
 
         //PUT:api/Ticket/{guid}
         [HttpPut("{id}")]
-        [Authorize(Policy = "RequireAdminRole")]
+        [Authorize]
         public async Task<IActionResult> UpdateTicketDetails(Guid id, [FromForm] TicketUpdateDto updateDto)
         {
             try
@@ -184,7 +184,7 @@ public async Task<IActionResult> ApproveTicket(Guid id, [FromBody] string notes 
 
         // POST: api/Ticket/{id}/return (SubAdmin)
         [HttpPost("{id}/return")]
-        [Authorize(Roles = "SubAdminRole")]
+        [Authorize(Policy = "SubAdminRole")]
         public async Task<IActionResult> ReturnTicket(Guid id, [FromBody] string notes)
         {
             await _ticketService.UpdateTicketAsync(id, TicketActionType.Returned, notes);
@@ -193,7 +193,7 @@ public async Task<IActionResult> ApproveTicket(Guid id, [FromBody] string notes 
 
         // POST: api/Ticket/{id}/escalate (SubAdmin)
         [HttpPost("{id}/escalate")]
-        [Authorize(Roles = "SubAdminRole")]
+        [Authorize(Policy = "SubAdminRole")]
         public async Task<IActionResult> EscalateTicket(Guid id, [FromBody] string notes)
         {
             await _ticketService.UpdateTicketAsync(id, TicketActionType.Escalated, notes);
@@ -202,7 +202,7 @@ public async Task<IActionResult> ApproveTicket(Guid id, [FromBody] string notes 
 
         // POST: api/Ticket/{id}/resolve (SystemAdmin)
         [HttpPost("{id}/resolve")]
-        [Authorize(Roles = "RequireAdminRole")]
+        [Authorize(Policy = "RequireAdminRole")]
         public async Task<IActionResult> ResolveTicket(Guid id, [FromBody] string notes)
         {
             await _ticketService.UpdateTicketAsync(id, TicketActionType.Resolved, notes);
@@ -211,7 +211,7 @@ public async Task<IActionResult> ApproveTicket(Guid id, [FromBody] string notes 
 
         // POST: api/Ticket/{id}/close (ScopeSky)
         [HttpPost("{id}/close")]
-        [Authorize(Roles = "ScopeSky")]
+        [Authorize(Policy = "ScopeSky")]
         public async Task<IActionResult> CloseTicket(Guid id, [FromBody] string notes)
         {
             await _ticketService.UpdateTicketAsync(id, TicketActionType.Closed, notes);
