@@ -1,6 +1,7 @@
 using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Interfaces;
+using EVisaTicketSystem.Specifcation;
 using Microsoft.EntityFrameworkCore;
 
 namespace EVisaTicketSystem.Infrastructure.Repositories
@@ -20,6 +21,23 @@ public async Task<IEnumerable<Ticket>> GetAllAsync()
         .Include(t => t.CreatedBy) // Ensure CreatedBy is loaded
         .ToListAsync();
 }
+// Implement the specification-based query methods
+        public async Task<IEnumerable<Ticket>> ListAsync(ISpecification<Ticket> spec)
+        {
+            return await ApplySpecification(spec).ToListAsync();
+        }
+
+        public async Task<int> CountAsync(ISpecification<Ticket> spec)
+        {
+            return await ApplySpecification(spec).CountAsync();
+        }
+
+        // Helper method to apply specification to the query
+        private IQueryable<Ticket> ApplySpecification(ISpecification<Ticket> spec)
+        {
+            return SpecificationEvaluator<Ticket>.GetQuery(_context.Set<Ticket>().AsQueryable(), spec);
+        }
+
 
   public async Task<Ticket?> GetByIdAsync(Guid id)
 {
@@ -35,6 +53,17 @@ public async Task<IEnumerable<Ticket>> GetAllAsync()
             _context.Tickets.Add(ticket);
             return Task.FromResult(ticket);
         }
+        public async Task<Ticket?> GetByIdWithDetailsAsync(Guid id)
+{
+    return await _context.Tickets
+        .Include(t => t.CreatedBy)
+        .Include(t => t.AssignedTo)
+        .Include(t => t.Office)
+        .Include(t => t.TicketType)
+        .Include(t => t.Actions)
+            .ThenInclude(a => a.User)
+        .FirstOrDefaultAsync(t => t.Id == id);
+}
         public async Task<Ticket?> GetLastTicketAsync()
         {
             return await _context.Tickets

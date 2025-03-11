@@ -4,6 +4,7 @@ using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Enums;
 using EVisaTicketSystem.Core.Interfaces;
+using EVisaTicketSystem.Specifcation.Tickets;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,7 +37,7 @@ namespace EVisaTicketSystem.API.Controllers
         // GET: api/Ticket/{id}
             [HttpGet("{id}")]
             [Authorize]
-            public async Task<ActionResult<TicketResponseDto>> GetTicket(Guid id)
+            public async Task<ActionResult<TicketDetailDto>> GetTicket(Guid id)
             {
                 var ticket = await _ticketService.GetTicketByIdAsync(id);
                 if (ticket == null)
@@ -44,9 +45,41 @@ namespace EVisaTicketSystem.API.Controllers
                     return NotFound();
                 }
                 
-                var ticketDto = _mapper.Map<TicketResponseDto>(ticket);
+                var ticketDto = _mapper.Map<TicketDetailDto>(ticket);
                 return Ok(ticketDto);
             }
+            
+[HttpPost("search")]
+[Authorize]
+public async Task<IActionResult> SearchTickets([FromBody] TicketSearchParams searchParams)
+{
+    var spec = new FilterTicketsSpecification(
+        ticketNumber: searchParams.TicketNumber,
+        title: searchParams.Title,
+        officeId: searchParams.OfficeId,
+        status: searchParams.Status,
+        startDate: searchParams.StartDate,
+        endDate: searchParams.EndDate,
+        skip: (searchParams.PageNumber - 1) * searchParams.PageSize,
+        take: searchParams.PageSize,
+        sortBy: searchParams.SortBy,
+        isDescending: searchParams.IsDescending
+    );
+
+    // Use the ticket service instead of directly accessing a repository
+    var result = await _ticketService.SearchTicketsAsync(spec);
+    
+    // Map the tickets to DTOs if needed
+    var ticketDtos = _mapper.Map<IEnumerable<TicketResponseDto>>(result.Items);
+
+    return Ok(new
+    {
+        Items = ticketDtos,
+        TotalCount = result.TotalCount,
+        PageSize = searchParams.PageSize,
+        PageNumber = searchParams.PageNumber
+    });
+}
 
         // POST: api/Ticket (Create by ResidenceUser)
         [HttpPost]

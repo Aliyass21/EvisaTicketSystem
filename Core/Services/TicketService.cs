@@ -8,6 +8,7 @@ using EVisaTicketSystem.Core.Entities;
 using EVisaTicketSystem.Core.Enums;
 using EVisaTicketSystem.Core.Interfaces;
 using EVisaTicketSystem.Specifcation;
+using EVisaTicketSystem.Specifcation.Tickets;
 using Microsoft.AspNetCore.Http;
 
 namespace EVisaTicketSystem.Core.Services
@@ -25,6 +26,13 @@ namespace EVisaTicketSystem.Core.Services
             _photoService = photoService;     
         }
         
+public async Task<(IEnumerable<Ticket> Items, int TotalCount)> SearchTicketsAsync(FilterTicketsSpecification spec)
+{
+    var tickets = await _unitOfWork.TicketRepository.ListAsync(spec);
+    var totalCount = await _unitOfWork.TicketRepository.CountAsync(spec);
+    
+    return (tickets, totalCount);
+}
 
         // Helper method to get the current user's ID
         private Guid GetCurrentUserId()
@@ -236,10 +244,58 @@ public async Task<Ticket> CreateTicketAsync(TicketCreateDto ticketDto)
         }
 
         // Get ticket by Id
-        public async Task<Ticket> GetTicketByIdAsync(Guid id)
+public async Task<TicketDetailDto> GetTicketByIdAsync(Guid id)
+{
+    var ticket = await _unitOfWork.TicketRepository.GetByIdWithDetailsAsync(id);
+    
+    if (ticket == null)
+    {
+        return null;
+    }
+    
+    var ticketDetailDto = new TicketDetailDto
+    {
+        Id = ticket.Id,
+        TicketNumber = ticket.TicketNumber,
+        Title = ticket.Title,
+        Description = ticket.Description ?? string.Empty,
+        Status = ticket.Status,
+        CurrentStage = ticket.CurrentStage,
+        Priority = ticket.Priority,
+        
+        TicketTypeId = ticket.TicketTypeId,
+        TicketTypeName = ticket.TicketType?.Title ?? string.Empty,
+        
+        CreatedById = ticket.CreatedById,
+        CreatedByName = ticket.CreatedBy?.FullName ?? string.Empty,
+        
+        AssignedToId = ticket.AssignedToId,
+        AssignedToName = ticket.AssignedTo?.FullName ?? string.Empty,
+        
+        OfficeId = ticket.OfficeId,
+        OfficeName = ticket.Office?.Title ?? string.Empty,
+        
+        CreatedAt = ticket.DateCreated,
+        ClosedAt = ticket.ClosedAt,
+        
+        Actions = ticket.Actions.Select(a => new TicketActionDto
         {
-            return await _unitOfWork.TicketRepository.GetByIdAsync(id);
-        }
+            Id = a.Id,
+            TicketId = a.TicketId,
+            UserId = a.UserId,
+            UserName = a.User?.FullName ?? string.Empty,
+            ActionType = a.ActionType,
+            ActionDate = a.ActionDate,
+            Notes = a.Notes ?? string.Empty,
+            PreviousStatus = a.PreviousStatus,
+            NewStatus = a.NewStatus,
+            PreviousStage = a.PreviousStage,
+            NewStage = a.NewStage
+        }).ToList()
+    };
+    
+    return ticketDetailDto;
+}
 
         // Get all tickets
         public async Task<IEnumerable<Ticket>> GetAllTicketsAsync()
