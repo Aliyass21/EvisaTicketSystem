@@ -37,6 +37,9 @@ app.MapHub<NotificationHub>("/notificationHub");
 
 app.UseHttpsRedirection();
 
+// To enable Swagger regardless of the environment, simply call:
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins("http://localhost:4200","https://localhost:4200","http://localhost:5173"));
 
