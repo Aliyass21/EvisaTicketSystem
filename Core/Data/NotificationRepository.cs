@@ -31,10 +31,13 @@ namespace EVisaTicketSystem.Data.Repositories
             return notification;
         }
 
-        public async Task<IEnumerable<Notification>> GetAllAsync()
-        {
-            return await _context.Notifications.ToListAsync();
-        }
+       public async Task<IEnumerable<Notification>> GetAllAsync()
+{
+    return await _context.Notifications
+        .OrderByDescending(n => n.DateCreated)
+        .ToListAsync();
+}
+
 
         public async Task<Notification> GetByIdAsync(Guid id)
         {

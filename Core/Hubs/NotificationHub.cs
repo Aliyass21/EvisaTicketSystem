@@ -21,36 +21,29 @@ namespace EVisaTicketSystem.Hubs
 
         // Method to get notifications for the authenticated user
 // Update the NotificationHub method to use IEnumerable instead of List
-public async Task<IEnumerable<Notification>> GetUserNotifications()
-{
-    try
-    {
-        var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        Console.WriteLine($"Extracted UserId from claims: {userIdClaim}");
-
-        if (string.IsNullOrEmpty(userIdClaim))
+        public async Task<IEnumerable<Notification>> GetUserNotifications()
         {
-            Console.WriteLine("UserId claim is missing or invalid.");
-            return Enumerable.Empty<Notification>();
+            try
+            {
+                // If you still want to validate user identity, do it here.
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                Console.WriteLine($"Extracted UserId from claims: {userIdClaim}");
+
+                // Log that we are about to return *all* notifications
+                Console.WriteLine("Returning ALL notifications to this user...");
+
+                // Use GetAllAsync() to fetch every notification, ignoring userId
+                var notifications = await _unitOfWork.NotificationRepository.GetAllAsync();
+
+                Console.WriteLine($"Found {notifications.Count()} total notifications in the system.");
+                return notifications;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetUserNotifications: {ex.Message}");
+                return Enumerable.Empty<Notification>();
+            }
         }
-
-        if (!Guid.TryParse(userIdClaim, out Guid userGuid))
-        {
-            Console.WriteLine("Failed to parse UserId to Guid.");
-            return Enumerable.Empty<Notification>();
-        }
-
-        var notifications = await _unitOfWork.NotificationRepository.GetNotificationsForUserAsync(userGuid);
-        Console.WriteLine($"Found {notifications.Count()} notifications for user {userGuid}");
-
-        return notifications;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error in GetUserNotifications: {ex.Message}");
-        return Enumerable.Empty<Notification>();
-    }
-}
 
 public override async Task OnConnectedAsync()
 {

@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using EVisaTicketSystem.Core.Entities;
 using EVisaTicketSystem.Hubs;
 using EVisaTicketSystem.Core.Interfaces;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace EVisaTicketSystem.Api.Controllers
@@ -20,45 +22,50 @@ namespace EVisaTicketSystem.Api.Controllers
             _unitOfWork = unitOfWork;
         }
 
-        // POST: api/Notifications
-        [HttpPost]
-        public async Task<IActionResult> PostNotification([FromBody] NotificationDto notificationDto)
+        // POST: api/notifications/global
+        // This endpoint is intended for admins to send a global notification.
+        [HttpPost("global")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> PostGlobalNotification([FromBody] GlobalNotificationDto notificationDto)
         {
-            // Create a new Notification entity
+            // Extract the admin's user ID from claims.
+            var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(adminId))
+            {
+                return Unauthorized("Admin user ID not found.");
+            }
+
+            if (!Guid.TryParse(adminId, out Guid adminGuid))
+            {
+                return BadRequest("Invalid admin user ID.");
+            }
+
+            // Create the Notification entity with the admin's ID as the sender.
             var notification = new Notification
             {
                 Message = notificationDto.Message,
-                IsRead = false, // default on creation
-                UserId = notificationDto.UserId
+                IsRead = false,
+                UserId = adminGuid
             };
 
-            // Using the unit of work to add and persist the notification.
-            // Make sure INotificationRepository includes an Add method.
+            // Persist the notification.
             _unitOfWork.NotificationRepository.Add(notification);
             var result = await _unitOfWork.Complete();
             if (!result)
             {
-                return StatusCode(500, "Failed to save the notification");
+                return StatusCode(500, "Failed to save the global notification");
             }
 
-            // Use SignalR NotificationService to send the notification.
-            if (notification.UserId == Guid.Empty)
-            {
-                await _notificationService.SendNotificationToAllAsync(notification);
-            }
-            else
-            {
-                await _notificationService.SendNotificationAsync(notification);
-            }
+            // Broadcast the notification to all connected clients using SendGlobalNotificationAsync.
+            await _notificationService.SendGlobalNotificationAsync(notification);
 
             return Ok(notification);
         }
     }
 
-    // DTO for incoming notification data.
-    public class NotificationDto
+    // DTO for global notifications.
+    public class GlobalNotificationDto
     {
         public string Message { get; set; } = string.Empty;
-        public Guid UserId { get; set; }
     }
 }

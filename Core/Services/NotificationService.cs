@@ -14,13 +14,24 @@ public class NotificationService
     // Sends a notification to all connected clients.
 public async Task SendNotificationToAllAsync(Notification notification)
 {
-    await _hubContext.Clients.All.SendAsync("ReceiveNotification", new
+    await _hubContext.Clients.All.SendAsync("ReceiveGlobalNotification", new
     {
         Message = notification.Message,
         IsRead = notification.IsRead,
         UserId = notification.UserId
     });
 }
+    // Broadcast a global notification to all connected clients.
+ public async Task SendGlobalNotificationAsync(Notification notification)
+{
+    await _hubContext.Clients.All.SendAsync("ReceiveGlobalNotification", new
+    {
+        Message = notification.Message,
+        IsRead = notification.IsRead,
+        UserId = notification.UserId
+    });
+}
+
 
     // Sends a notification to a specific user.
     public async Task SendNotificationAsync(Notification notification)
