@@ -9,6 +9,8 @@ public interface IUnitOfWork
     ITicketRepository TicketRepository { get; } // Add TicketRepository
     ITicketTypeRepository TicketTypeRepository { get; } // Add this line
     IOfficeRepository OfficeRepository { get; } // Add this line
+    INotificationRepository NotificationRepository { get; } // Add this line
+
 
 
     // IMessageRepository MessageRepository {get;}

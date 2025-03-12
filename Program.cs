@@ -2,6 +2,7 @@ using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.Entities;
 using EVisaTicketSystem.Core.Middleware;
 using EVisaTicketSystem.Extensions;
+using EVisaTicketSystem.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,11 +33,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionMiddleware>();
 
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.UseHttpsRedirection();
 
 
-app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins("http://localhost:4200","https://localhost:4200"));
+app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins("http://localhost:4200","https://localhost:4200","http://localhost:5173"));
 
 app.UseAuthentication();
 app.UseAuthorization();

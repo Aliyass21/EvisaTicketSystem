@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using EVisaTicketSystem.Core.Interfaces;
 using EVisaTicketSystem.Interfaces;
@@ -14,19 +13,22 @@ namespace EVisaTicketSystem.Core.Data
             IUserRepository userRepository,
             ITicketRepository ticketRepository,
             ITicketTypeRepository ticketTypeRepository,
-            IOfficeRepository officeRepository) // Added OfficeRepository parameter
+            IOfficeRepository officeRepository,
+            INotificationRepository notificationRepository) // Added parameter
         {
             _context = context;
             UserRepository = userRepository;
             TicketRepository = ticketRepository;
             TicketTypeRepository = ticketTypeRepository;
-            OfficeRepository = officeRepository; // Added OfficeRepository assignment
+            OfficeRepository = officeRepository;
+            NotificationRepository = notificationRepository; // Assign it here
         }
 
         public IUserRepository UserRepository { get; }
         public ITicketRepository TicketRepository { get; }
         public ITicketTypeRepository TicketTypeRepository { get; }
-        public IOfficeRepository OfficeRepository { get; } // Added OfficeRepository property
+        public IOfficeRepository OfficeRepository { get; }
+        public INotificationRepository NotificationRepository { get; } // Add this property
 
         public async Task<bool> Complete()
         {

@@ -3,6 +3,7 @@ using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.Helpers;
 using EVisaTicketSystem.Core.Interfaces;
 using EVisaTicketSystem.Core.Services;
+using EVisaTicketSystem.Data.Repositories;
 using EVisaTicketSystem.Infrastructure.Repositories;
 using EVisaTicketSystem.Infrastructure.Services;
 using EVisaTicketSystem.Interfaces;
@@ -26,6 +27,11 @@ public static class ApplicationServiceExtensions
        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
        services.AddScoped<LogUserActivity>();
        services.AddScoped<IUnitOfWork, UnitOfWork>();
+       services.AddSignalR();
+       services.AddSingleton<NotificationService>();
+       services.AddScoped<INotificationRepository, NotificationRepository>();
+
+
 
 
     //    services.AddDbContext<DataContext>(opt =>
