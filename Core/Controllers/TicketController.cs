@@ -159,8 +159,10 @@ public async Task<IActionResult> SearchTickets([FromBody] TicketSearchParams sea
         // POST: api/Ticket/{id}/approve
 [HttpPost("{id}/approve")]
 [Authorize]
-public async Task<IActionResult> ApproveTicket(Guid id, [FromBody] string notes = "")
+public async Task<IActionResult> ApproveTicket(Guid id, [FromBody] ApproveTicketRequest request = null)
 {
+    var notes = request?.Notes ?? "";
+    
     try
     {
         await _ticketService.ApproveTicketAsync(id, notes);
