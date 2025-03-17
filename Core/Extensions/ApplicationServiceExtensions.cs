@@ -28,6 +28,7 @@ public static class ApplicationServiceExtensions
        services.AddScoped<LogUserActivity>();
        services.AddScoped<IUnitOfWork, UnitOfWork>();
        services.AddSignalR();
+       services.AddScoped<TicketStateMachine>(); // Register TicketStateMachine
        //services.AddSingleton<NotificationService>();
        services.AddScoped<NotificationService>();  // <-- changed from .AddSingleton()
 

@@ -1,5 +1,5 @@
-namespace EVisaTicketSystem.Core.Enums;
-
+namespace EVisaTicketSystem.Core.Enums
+{
     public enum TicketStatus
     {
         New = 1,
@@ -10,5 +10,8 @@ namespace EVisaTicketSystem.Core.Enums;
         Rejected = 6,
         Cancelled = 7,
         Resolved = 8,
-        Closed = 9
+        SentToScopesky = 9,
+        ReviewedByAdmin = 10,
+        Closed = 11
     }
+}

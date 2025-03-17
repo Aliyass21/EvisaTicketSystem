@@ -1,15 +1,10 @@
-using System;
-using System.Collections.Generic;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using EVisaTicketSystem.Core.Data;
 using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
 using EVisaTicketSystem.Core.Enums;
 using EVisaTicketSystem.Core.Interfaces;
-using EVisaTicketSystem.Specifcation;
 using EVisaTicketSystem.Specifcation.Tickets;
-using Microsoft.AspNetCore.Http;
 
 namespace EVisaTicketSystem.Core.Services
 {
@@ -19,18 +14,24 @@ namespace EVisaTicketSystem.Core.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPhotoService _photoService; // Inject your photo service
         private readonly NotificationService _notificationService; // Add this
+        private readonly TicketStateMachine _ticketStateMachine; // Inject the state machine
+
 
 
         public TicketService(
             IUnitOfWork unitOfWork,
             IHttpContextAccessor httpContextAccessor,
             IPhotoService photoService,
-            NotificationService notificationService) // Inject here
+            NotificationService notificationService, // Inject here
+            TicketStateMachine ticketStateMachine) // Inject here
+
         {
             _unitOfWork = unitOfWork;
             _httpContextAccessor = httpContextAccessor;
             _photoService = photoService;
             _notificationService = notificationService; // Store reference
+            _ticketStateMachine = ticketStateMachine; // Store reference
+
         }
 public async Task<(IEnumerable<Ticket> Items, int TotalCount)> SearchTicketsAsync(FilterTicketsSpecification spec)
 {
@@ -163,8 +164,6 @@ public async Task<Ticket> UpdateTicketDetailsAsync(Guid ticketId, TicketUpdateDt
 
     return ticket;
 }
-
-
 
 private async Task<string> GetNextTicketNumberAsync()
 {
@@ -351,52 +350,52 @@ public async Task<TicketDetailDto> GetTicketByIdAsync(Guid id)
 
         // Update ticket (FSM Transition)
         
-public async Task UpdateTicketAsync(Guid ticketId, TicketActionType actionType, string notes = "")
-{
-    var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);
-    if (ticket == null) throw new Exception("Ticket not found.");
+ public async Task UpdateTicketAsync(Guid ticketId, TicketActionType actionType, string notes = "")
+        {
+            var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);
+            if (ticket == null) throw new Exception("Ticket not found.");
 
-    var currentUserRole = GetUserRole();
-    var currentStage = ticket.CurrentStage;
-    var currentStatus = ticket.Status;
+            var currentUserRole = GetUserRole();
+            var currentStage = ticket.CurrentStage;
+            var currentStatus = ticket.Status;
 
-    // 1) Determine the next state
-    (TicketStatus newStatus, TicketStage newStage) = GetNextState(
-        currentStatus, currentStage, actionType, currentUserRole);
+            // Use the state machine to determine the next state
+            (TicketStatus newStatus, TicketStage newStage) = _ticketStateMachine.GetNextState(
+                currentStatus, currentStage, actionType, currentUserRole);
 
-    // 2) Update the ticket
-    ticket.Status = newStatus;
-    ticket.CurrentStage = newStage;
+            // Update the ticket
+            ticket.Status = newStatus;
+            ticket.CurrentStage = newStage;
 
-    // 3) Log the action
-    var ticketAction = new TicketAction
-    {
-        TicketId = ticket.Id,
-        UserId = GetCurrentUserId(),
-        ActionType = actionType,
-        ActionDate = DateTime.UtcNow,
-        Notes = notes,
-        PreviousStatus = currentStatus,
-        NewStatus = newStatus,
-        PreviousStage = currentStage,
-        NewStage = newStage
-    };
-    ticket.Actions.Add(ticketAction);
+            // Log the action
+            var ticketAction = new TicketAction
+            {
+                TicketId = ticket.Id,
+                UserId = GetCurrentUserId(),
+                ActionType = actionType,
+                ActionDate = DateTime.UtcNow,
+                Notes = notes,
+                PreviousStatus = currentStatus,
+                NewStatus = newStatus,
+                PreviousStage = currentStage,
+                NewStage = newStage
+            };
 
-    // If the ticket is closed, set ClosedAt
-    if (newStatus == TicketStatus.Closed)
-        ticket.ClosedAt = DateTime.UtcNow;
+            ticket.Actions.Add(ticketAction);
 
-    // 4) Update the ticket in the DB
-    await _unitOfWork.TicketRepository.UpdateAsync(ticket);
-    await _unitOfWork.Complete();
+            // If the ticket is closed, set ClosedAt
+            if (newStatus == TicketStatus.Closed)
+                ticket.ClosedAt = DateTime.UtcNow;
 
-    // 5) Finally, notify the ticket creator
-    var statusArabic = TranslateStatusToArabic(ticket.Status);
-    var notificationMessage = $"تم تغيير حالة التذكرة رقم '{ticket.TicketNumber}' إلى {statusArabic}.";
-    await NotifyTicketCreatorAsync(ticketId, notificationMessage);
+            // Update the ticket in the DB
+            await _unitOfWork.TicketRepository.UpdateAsync(ticket);
+            await _unitOfWork.Complete();
 
-}
+            // Notify the ticket creator
+            var statusArabic = TranslateStatusToArabic(ticket.Status);
+            var notificationMessage = $"تم تغيير حالة التذكرة رقم '{ticket.TicketNumber}' إلى {statusArabic}.";
+            await NotifyTicketCreatorAsync(ticketId, notificationMessage);
+        }
 
 private string TranslateStatusToArabic(TicketStatus status)
 {
@@ -414,87 +413,5 @@ private string TranslateStatusToArabic(TicketStatus status)
         _ => "غير معروفة" // fallback if needed
     };
 }
-
-
-        // FSM Transition Rules
-internal (TicketStatus, TicketStage) GetNextState(
-    TicketStatus currentStatus,
-    TicketStage currentStage,
-    TicketActionType actionType,
-    string role)
-{
-    // Transition: New → InReview (Submission by ResidenceUser)
-    if (currentStatus == TicketStatus.New   
- && actionType == TicketActionType.StatusChanged)
-    {
-        return (TicketStatus.InReview, TicketStage.SubAdmin);
-    }
-
-    // Transition: InReview → Escalated (Escalation by SubAdmin)
-    if (currentStatus == TicketStatus.InReview  && actionType == TicketActionType.Escalated)
-    {
-        return (TicketStatus.Escalated, TicketStage.SystemAdmin);
-    }
-
-    // Transition: InReview → Returned (Ticket is sent back for corrections)
-    if (currentStatus == TicketStatus.InReview &&  actionType == TicketActionType.Returned)
-    {
-        return (TicketStatus.Returned, TicketStage.ResidenceUser);
-    }
-
-    // Transition: Escalated → InProgress / Resolved / Rejected (Action by SystemAdmin)
-    if (currentStatus == TicketStatus.Escalated)
-    {
-        switch (actionType)
-        {
-            case TicketActionType.InProgress:
-                return (TicketStatus.InProgress, TicketStage.SystemAdmin);
-            case TicketActionType.Resolved:
-                return (TicketStatus.Resolved, TicketStage.ScopeSky);
-            case TicketActionType.Rejected:
-                return (TicketStatus.Rejected, TicketStage.SubAdmin);
-            default:
-                throw new InvalidOperationException("Invalid action for Escalated state.");
-        }
-    }
-
-    // Transition: InProgress → Resolved / Rejected / Cancelled (Action by SystemAdmin)
-    if (currentStatus == TicketStatus.InProgress )
-    {
-        switch (actionType)
-        {
-            case TicketActionType.Resolved:
-                return (TicketStatus.Resolved, TicketStage.ScopeSky);
-            case TicketActionType.Rejected:
-                return (TicketStatus.Rejected, TicketStage.SubAdmin);
-            case TicketActionType.Cancelled:
-                return (TicketStatus.Cancelled, currentStage); // Stage remains unchanged
-            default:
-                throw new InvalidOperationException("Invalid action for InProgress state.");
-        }
-    }
-
-    // Transition: Rejected → InReview (Resubmission by ResidenceUser)
-    if (currentStatus == TicketStatus.Rejected && actionType == TicketActionType.StatusChanged)
-    {
-        return (TicketStatus.InReview, TicketStage.SubAdmin);
-    }
-
-    // Transition: Returned → InReview (Resubmission by ResidenceUser)
-    if (currentStatus == TicketStatus.Returned   && actionType == TicketActionType.StatusChanged)
-    {
-        return (TicketStatus.InReview, TicketStage.SubAdmin);
-    }
-
-    // Transition: Resolved → Closed (Closing by ScopeSky)
-    if (currentStatus == TicketStatus.Resolved  && actionType == TicketActionType.Closed)
-    {
-        return (TicketStatus.Closed, TicketStage.ScopeSky);
-    }
-
-    throw new InvalidOperationException("Invalid transition.");
-}
-
-
     }
 }
