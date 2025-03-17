@@ -6,12 +6,12 @@ using EVisaTicketSystem.Core.Interfaces;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using EVisaTicketSystem.Core.Controllers;
 
 namespace EVisaTicketSystem.Api.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class NotificationsController : ControllerBase
+
+    public class NotificationsController : BaseApiController
     {
         private readonly NotificationService _notificationService;
         private readonly IUnitOfWork _unitOfWork;
@@ -21,6 +21,20 @@ namespace EVisaTicketSystem.Api.Controllers
             _notificationService = notificationService;
             _unitOfWork = unitOfWork;
         }
+
+    [HttpPost("{notificationId}/read")]
+    public async Task<IActionResult> MarkNotificationAsRead(Guid notificationId)
+    {
+        await _notificationService.MarkNotificationAsReadAsync(notificationId);
+        return Ok();
+    }
+
+    [HttpPost("all/read")]
+    public async Task<IActionResult> MarkAllNotificationsAsRead([FromBody] Guid userId)
+    {
+        await _notificationService.MarkAllNotificationsAsReadAsync(userId);
+        return Ok();
+    }
 
         // POST: api/notifications/global
         // This endpoint is intended for admins to send a global notification.

@@ -28,7 +28,9 @@ public static class ApplicationServiceExtensions
        services.AddScoped<LogUserActivity>();
        services.AddScoped<IUnitOfWork, UnitOfWork>();
        services.AddSignalR();
-       services.AddSingleton<NotificationService>();
+       //services.AddSingleton<NotificationService>();
+       services.AddScoped<NotificationService>();  // <-- changed from .AddSingleton()
+
        services.AddScoped<INotificationRepository, NotificationRepository>();
 
 

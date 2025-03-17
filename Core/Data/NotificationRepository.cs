@@ -47,6 +47,11 @@ namespace EVisaTicketSystem.Data.Repositories
         {
             _context.Notifications.Add(notification);
         }
+        public async Task UpdateAsync(Notification notification)
+{
+    _context.Notifications.Update(notification);
+    await _context.SaveChangesAsync();
+}
 
 
         // New method: Get notifications for a specific user.

@@ -18,14 +18,20 @@ namespace EVisaTicketSystem.Core.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPhotoService _photoService; // Inject your photo service
+        private readonly NotificationService _notificationService; // Add this
 
-        public TicketService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor,IPhotoService photoService  )
+
+        public TicketService(
+            IUnitOfWork unitOfWork,
+            IHttpContextAccessor httpContextAccessor,
+            IPhotoService photoService,
+            NotificationService notificationService) // Inject here
         {
             _unitOfWork = unitOfWork;
             _httpContextAccessor = httpContextAccessor;
-            _photoService = photoService;     
+            _photoService = photoService;
+            _notificationService = notificationService; // Store reference
         }
-        
 public async Task<(IEnumerable<Ticket> Items, int TotalCount)> SearchTicketsAsync(FilterTicketsSpecification spec)
 {
     var tickets = await _unitOfWork.TicketRepository.ListAsync(spec);
@@ -33,6 +39,28 @@ public async Task<(IEnumerable<Ticket> Items, int TotalCount)> SearchTicketsAsyn
     
     return (tickets, totalCount);
 }
+private async Task NotifyTicketCreatorAsync(Guid ticketId, string message)
+{
+    var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);
+    if (ticket == null) throw new Exception("Ticket not found.");
+
+    // Build notification
+    var notification = new Notification
+    {
+        Message = message,
+        IsRead = false,
+        UserId = ticket.CreatedById
+    };
+
+    // Optionally store the notification in your DB before sending
+    // (Assuming you have a NotificationRepository on your UnitOfWork)
+     await _unitOfWork.NotificationRepository.CreateAsync(notification);
+     await _unitOfWork.Complete();
+
+    // Then send it via SignalR (real-time push)
+    await _notificationService.SendNotificationAsync(notification);
+}
+
 
         // Helper method to get the current user's ID
         private Guid GetCurrentUserId()
@@ -178,8 +206,26 @@ public async Task<Ticket> CreateTicketAsync(TicketCreateDto ticketDto)
         ticketDto.CreatedById = GetCurrentUserId();
     }
 
+    // Get the current user's role
+    var currentUserRole = GetUserRole();
+
     // Generate the ticket number in the backend
     var generatedTicketNumber = await GetNextTicketNumberAsync();
+
+    // Determine the initial status and stage based on the role of the creator
+    TicketStatus initialStatus = TicketStatus.New;
+    TicketStage initialStage = TicketStage.ResidenceUser;
+
+    if (currentUserRole == "Admin")
+    {
+        initialStatus = TicketStatus.Resolved;
+        initialStage = TicketStage.ScopeSky;
+    }
+    else if (currentUserRole == "SubAdmin")
+    {
+        initialStatus = TicketStatus.Escalated;
+        initialStage = TicketStage.SystemAdmin;
+    }
 
     // Map properties from the DTO to a new Ticket and assign the generated TicketNumber
     var ticket = new Ticket
@@ -187,8 +233,8 @@ public async Task<Ticket> CreateTicketAsync(TicketCreateDto ticketDto)
         TicketNumber = generatedTicketNumber,
         Title = ticketDto.Title,
         Description = ticketDto.Description,
-        Status = ticketDto.Status,
-        CurrentStage = ticketDto.CurrentStage,
+        Status = initialStatus,  // Set the determined initial status
+        CurrentStage = initialStage, // Set the determined initial stage
         Priority = ticketDto.Priority,
         TicketTypeId = ticketDto.TicketTypeId,
         CreatedById = ticketDto.CreatedById,
@@ -211,7 +257,6 @@ public async Task<Ticket> CreateTicketAsync(TicketCreateDto ticketDto)
         NewStatus = ticket.Status,
         NewStage = ticket.CurrentStage
     };
-
     ticket.Actions.Add(createdAction);
 
     // If an attachment file is provided, process it.
@@ -223,7 +268,6 @@ public async Task<Ticket> CreateTicketAsync(TicketCreateDto ticketDto)
             TicketId = ticket.Id,
             FilePath = uploadResult.FilePath
         };
-
         ticket.Attachments.Add(attachment);
     }
 
@@ -308,30 +352,24 @@ public async Task<TicketDetailDto> GetTicketByIdAsync(Guid id)
 public async Task UpdateTicketAsync(Guid ticketId, TicketActionType actionType, string notes = "")
 {
     var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);
-
     if (ticket == null) throw new Exception("Ticket not found.");
 
     var currentUserRole = GetUserRole();
     var currentStage = ticket.CurrentStage;
     var currentStatus = ticket.Status;
 
-    // Validate role and transition
-    (TicketStatus newStatus, TicketStage newStage) = GetNextState(currentStatus, currentStage, actionType, currentUserRole);
+    // 1) Determine the next state
+    (TicketStatus newStatus, TicketStage newStage) = GetNextState(
+        currentStatus, currentStage, actionType, currentUserRole);
 
-    // Update ticket state
+    // 2) Update the ticket
     ticket.Status = newStatus;
     ticket.CurrentStage = newStage;
 
-    // If the ticket is being closed, set the closed date
-    if (newStatus == TicketStatus.Closed)
-    {
-        ticket.ClosedAt = DateTime.UtcNow;
-    }
-
-    // Create the action log
+    // 3) Log the action
     var ticketAction = new TicketAction
     {
-        TicketId = ticketId,
+        TicketId = ticket.Id,
         UserId = GetCurrentUserId(),
         ActionType = actionType,
         ActionDate = DateTime.UtcNow,
@@ -341,15 +379,39 @@ public async Task UpdateTicketAsync(Guid ticketId, TicketActionType actionType, 
         PreviousStage = currentStage,
         NewStage = newStage
     };
-
-    // Add the action to the ticket's actions collection
     ticket.Actions.Add(ticketAction);
 
-    // Update the ticket
-    _unitOfWork.TicketRepository.UpdateAsync(ticket);
+    // If the ticket is closed, set ClosedAt
+    if (newStatus == TicketStatus.Closed)
+        ticket.ClosedAt = DateTime.UtcNow;
+
+    // 4) Update the ticket in the DB
+    await _unitOfWork.TicketRepository.UpdateAsync(ticket);
     await _unitOfWork.Complete();
+
+    // 5) Finally, notify the ticket creator
+    var statusArabic = TranslateStatusToArabic(ticket.Status);
+    var notificationMessage = $"تم تغيير حالة التذكرة رقم '{ticket.TicketNumber}' إلى {statusArabic}.";
+    await NotifyTicketCreatorAsync(ticketId, notificationMessage);
+
 }
 
+private string TranslateStatusToArabic(TicketStatus status)
+{
+    return status switch
+    {
+        TicketStatus.New        => "جديدة",
+        TicketStatus.InReview   => "قيد المراجعة",
+        TicketStatus.Returned   => "معادة",
+        TicketStatus.Escalated  => "تم تصعيدها",
+        TicketStatus.InProgress => "قيد التنفيذ",
+        TicketStatus.Rejected   => "مرفوضة",
+        TicketStatus.Cancelled  => "ملغاة",
+        TicketStatus.Resolved   => "تم حلها",
+        TicketStatus.Closed     => "مغلقة",
+        _ => "غير معروفة" // fallback if needed
+    };
+}
 
 
         // FSM Transition Rules

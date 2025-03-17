@@ -12,12 +12,30 @@ namespace EVisaTicketSystem.Hubs
 {
     public class NotificationHub : Hub
     {
+            private readonly NotificationService _notificationService;
+
         private readonly IUnitOfWork _unitOfWork;
 
-        public NotificationHub(IUnitOfWork unitOfWork)
+        public NotificationHub(IUnitOfWork unitOfWork,NotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
+            _notificationService = notificationService;
+
         }
+    // Called from the client to mark a specific notification as read
+    public async Task MarkNotificationAsRead(Guid notificationId)
+    {
+        // 1) Tell the NotificationService to update IsRead in the database
+        await _notificationService.MarkNotificationAsReadAsync(notificationId);
+
+        // 2) Optionally let the caller know it was processed successfully
+        //    (You might skip this if your service method already broadcasts a message)
+        await Clients.Caller.SendAsync("NotificationMarkedAsReadConfirmation", notificationId);
+    }
+    public async Task MarkAllNotificationsAsRead(Guid userId)
+    {
+        await _notificationService.MarkAllNotificationsAsReadAsync(userId);
+    }
 
         // Method to get notifications for the authenticated user
 // Update the NotificationHub method to use IEnumerable instead of List
@@ -44,6 +62,7 @@ namespace EVisaTicketSystem.Hubs
                 return Enumerable.Empty<Notification>();
             }
         }
+        
 
 public override async Task OnConnectedAsync()
 {
