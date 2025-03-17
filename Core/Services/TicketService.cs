@@ -322,7 +322,9 @@ public async Task<TicketDetailDto> GetTicketByIdAsync(Guid id)
         CreatedAt = ticket.DateCreated,
         ClosedAt = ticket.ClosedAt,
         
-        Actions = ticket.Actions.Select(a => new TicketActionDto
+        Actions = ticket.Actions
+        .OrderBy(a => a.ActionDate)
+        .Select(a => new TicketActionDto
         {
             Id = a.Id,
             TicketId = a.TicketId,
