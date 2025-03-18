@@ -417,8 +417,9 @@ private string TranslateStatusToArabic(TicketStatus status)
         TicketStatus.Cancelled  => "ملغاة",
         TicketStatus.Resolved   => "تم حلها",
         TicketStatus.Closed     => "مغلقة",
+        TicketStatus.RejectByScopesky=>"رفضت من قبل سكوب سكاي",
         TicketStatus.SentToScopesky =>"ارسلت الى سكوب سكاي",
-        TicketStatus.ReviewedByAdmin =>" قيد مراجعة الأدمن",
+        TicketStatus.ReviewedByAdmin =>"مراجعة اخيرة من قبل الأدمن",
         TicketStatus.AdminReview     => "قيد مراجعة الأدمن", 
 
         _ => "غير معروفة" // fallback if needed

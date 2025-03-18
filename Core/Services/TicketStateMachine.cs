@@ -4,151 +4,109 @@ namespace EVisaTicketSystem.Core.Services
 {
     public class TicketStateMachine
     {
-        // FSM Transition Rules
-        public (TicketStatus, TicketStage) GetNextState(
+        public (TicketStatus NextStatus, TicketStage NextStage) GetNextState(
             TicketStatus currentStatus,
             TicketStage currentStage,
             TicketActionType actionType,
             string role)
         {
-            // Residence User Flow
-            if (role == "ResidenceUser")
+            switch (role)
             {
-                // Create new ticket
-                if (currentStatus == TicketStatus.New && actionType == TicketActionType.Created)
-                {
-                    return (TicketStatus.New, TicketStage.ResidenceUser);
-                }
-                
-                // Submit ticket for review
-                if (currentStatus == TicketStatus.New && actionType == TicketActionType.StatusChanged)
-                {
-                    return (TicketStatus.InReview, TicketStage.SubAdmin);
-                }
-                
-                // Resubmit returned ticket
-                if (currentStatus == TicketStatus.Returned && actionType == TicketActionType.StatusChanged)
-                {
-                    return (TicketStatus.InReview, TicketStage.SubAdmin);
-                }
-                
-                // Resubmit rejected ticket
-                if (currentStatus == TicketStatus.Rejected && actionType == TicketActionType.StatusChanged)
-                {
-                    return (TicketStatus.InReview, TicketStage.SubAdmin);
-                }
-            }
-            
-            // SubAdmin Flow
-            else if (role == "SubAdmin")
-            {
-                // Create new ticket
-                if (currentStatus == TicketStatus.New && actionType == TicketActionType.Created)
-                {
-                    return (TicketStatus.New, TicketStage.SubAdmin);
-                }
-                
-                // Return ticket to residence user
-                if (currentStatus == TicketStatus.InReview && actionType == TicketActionType.Returned)
-                {
-                    return (TicketStatus.Returned, TicketStage.ResidenceUser);
-                }
-                
-                // Escalate ticket to system admin
-                if (currentStatus == TicketStatus.InReview && actionType == TicketActionType.Escalated)
-                {
-                    return (TicketStatus.Escalated, TicketStage.SystemAdmin);
-                }
-            }
-            
-            // SystemAdmin Flow
-            else if (role == "Admin")
-            {
-                             // Escalated ticket → AdminReview
-                if (currentStatus == TicketStatus.Escalated && actionType == TicketActionType.AdminReview)
-                {
-                    return (TicketStatus.AdminReview, TicketStage.SystemAdmin);
-                }
+                case "ResidenceUser":
+                    // When a ticket is created, it starts as New.
+                    if (currentStatus == TicketStatus.New && actionType == TicketActionType.Created)
+                        return (TicketStatus.New, TicketStage.ResidenceUser);
+                    
+                    // After editing a returned or rejected ticket,
+                    // using StatusChanged, the ticket is sent to InReview.
+                    if ((currentStatus == TicketStatus.Returned || currentStatus == TicketStatus.Rejected) &&
+                        actionType == TicketActionType.StatusChanged)
+                        return (TicketStatus.InReview, TicketStage.SubAdmin);
+                    break;
 
-                // Handle tickets in AdminReview
-                if (currentStatus == TicketStatus.AdminReview)
-                {
-                    switch (actionType)
+                case "SubAdmin":
+                    // For a ticket in InReview, a SubAdmin can:
+                    // - Return it to the resident or
+                    // - Escalate it to Admin.
+                    if (currentStatus == TicketStatus.InReview)
                     {
-                        // If admin decides to send it on to ScopeSky
-                        case TicketActionType.Resolved:
-                            return (TicketStatus.SentToScopesky, TicketStage.ScopeSky);
-                        // Or if admin decides to reject
-                        case TicketActionType.Rejected:
-                            return (TicketStatus.Rejected, TicketStage.SubAdmin);
-                        default:
-                            throw new InvalidOperationException(
-                                "Invalid action for AdminReview state.");
+                        if (actionType == TicketActionType.Returned)
+                            return (TicketStatus.Returned, TicketStage.ResidenceUser);
+                        if (actionType == TicketActionType.Escalated)
+                            return (TicketStatus.Escalated, TicketStage.SystemAdmin);
                     }
-                }
-      
-                // Handle in-progress tickets (by Admin)
-                if (currentStatus == TicketStatus.InProgress && currentStage == TicketStage.SystemAdmin)
-                {
-                    switch (actionType)
+                    
+                    // Also, if the ticket is in a Rejected state,
+                    // SubAdmin can either return it or escalate it.
+                    if (currentStatus == TicketStatus.Rejected)
                     {
-                        case TicketActionType.Resolved:
+                        if (actionType == TicketActionType.Returned)
+                            return (TicketStatus.Returned, TicketStage.ResidenceUser);
+                        if (actionType == TicketActionType.Escalated)
+                            return (TicketStatus.Escalated, TicketStage.SystemAdmin);
+                    }
+                    break;
+
+                case "Admin":
+                    // When an escalated ticket is ready for admin work,
+                    // Admin sets it to AdminReview using AdminReview action.
+                    if (currentStatus == TicketStatus.Escalated &&
+                        actionType == TicketActionType.AdminReview)
+                        return (TicketStatus.AdminReview, TicketStage.SystemAdmin);
+                    
+                    // In AdminReview state, Admin can:
+                    // - Approve and send the ticket to ScopeSky (Resolved)
+                    // - Reject it (Rejected) to return to SubAdmin
+                    // - Cancel it (Cancelled)
+                    if (currentStatus == TicketStatus.AdminReview)
+                    {
+                        if (actionType == TicketActionType.Resolved)
                             return (TicketStatus.SentToScopesky, TicketStage.ScopeSky);
-                        case TicketActionType.Rejected:
+                        if (actionType == TicketActionType.Rejected)
                             return (TicketStatus.Rejected, TicketStage.SubAdmin);
-                        case TicketActionType.Cancelled:
+                        if (actionType == TicketActionType.Cancelled)
                             return (TicketStatus.Cancelled, TicketStage.SystemAdmin);
-                        default:
-                            throw new InvalidOperationException("Invalid action for InProgress state.");
                     }
-                }
-                
-                // Review resolved tickets
-                if (currentStatus == TicketStatus.Resolved && actionType == TicketActionType.StatusChanged)
-                {
-                    return (TicketStatus.ReviewedByAdmin, TicketStage.ScopeSky);
-                }
-            }
-            
-            // ScopeSky Flow
-            else if (role == "ScopeSky")
-            {
-                // Process tickets sent from admin
-                if (currentStatus == TicketStatus.SentToScopesky)
-                {
-                    switch (actionType)
+                    
+                    // If ticket is in RejectByScopesky state, Admin can:
+                    // - Correct it and send it back to ScopeSky (Resolved)
+                    // - Or reject it again (Rejected) to return to SubAdmin.
+                    if (currentStatus == TicketStatus.RejectByScopesky)
                     {
-                        case TicketActionType.InProgress:
-                            return (TicketStatus.InProgress, TicketStage.ScopeSky);
-                        case TicketActionType.Rejected:
-                            return (TicketStatus.Rejected, TicketStage.SystemAdmin);
-                        default:
-                            throw new InvalidOperationException("Invalid action for SentToScopesky state.");
+                        if (actionType == TicketActionType.Resolved)
+                            return (TicketStatus.SentToScopesky, TicketStage.ScopeSky);
+                        if (actionType == TicketActionType.Rejected)
+                            return (TicketStatus.Rejected, TicketStage.SubAdmin);
                     }
-                }
-                
-                // Handle in-progress tickets (by ScopeSky)
+                    
+                    // After ScopeSky marks a ticket as Resolved, Admin reviews it.
+                    if (currentStatus == TicketStatus.Resolved &&
+                        actionType == TicketActionType.AdminReview)
+                        return (TicketStatus.ReviewedByAdmin, TicketStage.ScopeSky);
+                    break;
+
+                    case "ScopeSky":
+                if (currentStatus == TicketStatus.SentToScopesky &&
+                    actionType == TicketActionType.InProgress)
+                    return (TicketStatus.InProgress, TicketStage.ScopeSky);
+
                 if (currentStatus == TicketStatus.InProgress && currentStage == TicketStage.ScopeSky)
                 {
-                    switch (actionType)
-                    {
-                        case TicketActionType.Cancelled:
-                            return (TicketStatus.Cancelled, TicketStage.ScopeSky);
-                        case TicketActionType.Resolved:
-                            return (TicketStatus.Resolved, TicketStage.SystemAdmin);
-                        default:
-                            throw new InvalidOperationException("Invalid action for InProgress state in ScopeSky.");
-                    }
+                    if (actionType == TicketActionType.Resolved)
+                        return (TicketStatus.Resolved, TicketStage.SystemAdmin);
+                    if (actionType == TicketActionType.Rejected)
+                        return (TicketStatus.RejectByScopesky, TicketStage.SystemAdmin);
                 }
-                
-                // Close reviewed tickets
-                if (currentStatus == TicketStatus.ReviewedByAdmin && actionType == TicketActionType.Closed)
-                {
+
+                if (currentStatus == TicketStatus.ReviewedByAdmin &&
+                    actionType == TicketActionType.Closed)
                     return (TicketStatus.Closed, TicketStage.ScopeSky);
-                }
+                break;
+
             }
 
-            throw new InvalidOperationException($"Invalid transition from {currentStatus} with action {actionType} for role {role}.");
+            throw new InvalidOperationException(
+                $"Invalid transition from {currentStatus} with action {actionType} for role {role}.");
         }
     }
 }

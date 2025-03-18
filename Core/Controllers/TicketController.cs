@@ -168,6 +168,16 @@ namespace EVisaTicketSystem.API.Controllers
             return NoContent();
         }
 
+            // POST: api/Ticket/{id}/rejectbyscopesky
+            [HttpPost("{id}/rejectbyscopesky")]
+            [Authorize]
+            public async Task<IActionResult> RejectByScopesky(Guid id, [FromBody] string notes)
+            {
+                await _ticketService.UpdateTicketAsync(id, TicketActionType.Rejected, notes);
+                return NoContent();
+            }
+
+
         // POST: api/Ticket/{id}/cancel (Cancel ticket by SystemAdmin or ScopeSky)
         [HttpPost("{id}/cancel")]
         [Authorize]

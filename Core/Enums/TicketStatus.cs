@@ -11,10 +11,11 @@ namespace EVisaTicketSystem.Core.Enums
         InProgress = 6,
         Rejected = 7,
         Cancelled = 8,
-        Resolved = 9,
-        SentToScopesky = 10,
-        ReviewedByAdmin = 11,
-        Closed = 12,
+        RejectByScopesky=9,
+        Resolved = 10,
+        SentToScopesky = 11,
+        ReviewedByAdmin = 12,
+        Closed = 13,
 
         // NEW status
     }
