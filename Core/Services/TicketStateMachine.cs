@@ -64,22 +64,29 @@ namespace EVisaTicketSystem.Core.Services
             // SystemAdmin Flow
             else if (role == "Admin")
             {
-                // Handle escalated tickets
-                if (currentStatus == TicketStatus.Escalated)
+                             // Escalated ticket → AdminReview
+                if (currentStatus == TicketStatus.Escalated && actionType == TicketActionType.AdminReview)
+                {
+                    return (TicketStatus.AdminReview, TicketStage.SystemAdmin);
+                }
+
+                // Handle tickets in AdminReview
+                if (currentStatus == TicketStatus.AdminReview)
                 {
                     switch (actionType)
                     {
-                        case TicketActionType.InProgress:
-                            return (TicketStatus.InProgress, TicketStage.SystemAdmin);
+                        // If admin decides to send it on to ScopeSky
                         case TicketActionType.Resolved:
                             return (TicketStatus.SentToScopesky, TicketStage.ScopeSky);
+                        // Or if admin decides to reject
                         case TicketActionType.Rejected:
                             return (TicketStatus.Rejected, TicketStage.SubAdmin);
                         default:
-                            throw new InvalidOperationException("Invalid action for Escalated state.");
+                            throw new InvalidOperationException(
+                                "Invalid action for AdminReview state.");
                     }
                 }
-                
+      
                 // Handle in-progress tickets (by Admin)
                 if (currentStatus == TicketStatus.InProgress && currentStage == TicketStage.SystemAdmin)
                 {

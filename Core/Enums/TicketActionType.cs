@@ -1,5 +1,5 @@
-namespace EVisaTicketSystem.Core.Enums;
-
+namespace EVisaTicketSystem.Core.Enums
+{
     public enum TicketActionType
     {
         Created = 1,
@@ -15,5 +15,9 @@ namespace EVisaTicketSystem.Core.Enums;
         Cancelled = 11,
         InProgress = 12,
         Resolved = 13,
-        Closed = 14
+        Closed = 14,
+
+        // New action type
+        AdminReview = 15
     }
+}

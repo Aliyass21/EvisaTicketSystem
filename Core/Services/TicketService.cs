@@ -4,6 +4,7 @@ using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
 using EVisaTicketSystem.Core.Enums;
 using EVisaTicketSystem.Core.Interfaces;
+using EVisaTicketSystem.Services;
 using EVisaTicketSystem.Specifcation.Tickets;
 
 namespace EVisaTicketSystem.Core.Services
@@ -45,21 +46,22 @@ private async Task NotifyTicketCreatorAsync(Guid ticketId, string message)
     var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);
     if (ticket == null) throw new Exception("Ticket not found.");
 
-    // Build notification
+    // Build notification with explicit ID assignment
     var notification = new Notification
     {
+        Id = Guid.NewGuid(),  // Set ID explicitly
         Message = message,
         IsRead = false,
-        UserId = ticket.CreatedById
+        UserId = ticket.CreatedById,
+        DateCreated = DateTime.UtcNow
     };
 
-    // Optionally store the notification in your DB before sending
-    // (Assuming you have a NotificationRepository on your UnitOfWork)
-     await _unitOfWork.NotificationRepository.CreateAsync(notification);
-     await _unitOfWork.Complete();
-
-    // Then send it via SignalR (real-time push)
+    // Use the notification service to handle both DB storage and real-time notification
     await _notificationService.SendNotificationAsync(notification);
+    
+    // Remove these lines as they're now handled by the notification service
+    // await _unitOfWork.NotificationRepository.CreateAsync(notification);
+    // await _unitOfWork.Complete();
 }
 
 
@@ -217,7 +219,7 @@ public async Task<Ticket> CreateTicketAsync(TicketCreateDto ticketDto)
 
     if (currentUserRole == "Admin")
     {
-        initialStatus = TicketStatus.Resolved;
+        initialStatus = TicketStatus.SentToScopesky;
         initialStage = TicketStage.ScopeSky;
     }
     else if (currentUserRole == "SubAdmin")
@@ -350,52 +352,57 @@ public async Task<TicketDetailDto> GetTicketByIdAsync(Guid id)
 
         // Update ticket (FSM Transition)
         
- public async Task UpdateTicketAsync(Guid ticketId, TicketActionType actionType, string notes = "")
-        {
-            var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);
-            if (ticket == null) throw new Exception("Ticket not found.");
+public async Task UpdateTicketAsync(Guid ticketId, TicketActionType actionType, string notes = "")
+{
+    var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);
+    if (ticket == null) throw new Exception("Ticket not found.");
 
-            var currentUserRole = GetUserRole();
-            var currentStage = ticket.CurrentStage;
-            var currentStatus = ticket.Status;
+    var currentUserRole = GetUserRole();
+    var currentStage    = ticket.CurrentStage;
+    var currentStatus   = ticket.Status;
 
-            // Use the state machine to determine the next state
-            (TicketStatus newStatus, TicketStage newStage) = _ticketStateMachine.GetNextState(
-                currentStatus, currentStage, actionType, currentUserRole);
+    // Determine next state via state machine
+    (TicketStatus newStatus, TicketStage newStage) =
+        _ticketStateMachine.GetNextState(currentStatus, currentStage, actionType, currentUserRole);
 
-            // Update the ticket
-            ticket.Status = newStatus;
-            ticket.CurrentStage = newStage;
+    // Update status/stage
+    ticket.Status      = newStatus;
+    ticket.CurrentStage = newStage;
 
-            // Log the action
-            var ticketAction = new TicketAction
-            {
-                TicketId = ticket.Id,
-                UserId = GetCurrentUserId(),
-                ActionType = actionType,
-                ActionDate = DateTime.UtcNow,
-                Notes = notes,
-                PreviousStatus = currentStatus,
-                NewStatus = newStatus,
-                PreviousStage = currentStage,
-                NewStage = newStage
-            };
+    // --------- NEW LOGIC: auto-assign to the current user ----------
+    var currentUserId = GetCurrentUserId();
+    ticket.AssignedToId = currentUserId;
+    // ---------------------------------------------------------------
 
-            ticket.Actions.Add(ticketAction);
+    // Log the action
+    var ticketAction = new TicketAction
+    {
+        TicketId       = ticket.Id,
+        UserId         = currentUserId,
+        ActionType     = actionType,
+        ActionDate     = DateTime.UtcNow,
+        Notes          = notes,
+        PreviousStatus = currentStatus,
+        NewStatus      = newStatus,
+        PreviousStage  = currentStage,
+        NewStage       = newStage
+    };
 
-            // If the ticket is closed, set ClosedAt
-            if (newStatus == TicketStatus.Closed)
-                ticket.ClosedAt = DateTime.UtcNow;
+    ticket.Actions.Add(ticketAction);
 
-            // Update the ticket in the DB
-            await _unitOfWork.TicketRepository.UpdateAsync(ticket);
-            await _unitOfWork.Complete();
+    // If ticket is closed, set ClosedAt
+    if (newStatus == TicketStatus.Closed)
+        ticket.ClosedAt = DateTime.UtcNow;
 
-            // Notify the ticket creator
-            var statusArabic = TranslateStatusToArabic(ticket.Status);
-            var notificationMessage = $"تم تغيير حالة التذكرة رقم '{ticket.TicketNumber}' إلى {statusArabic}.";
-            await NotifyTicketCreatorAsync(ticketId, notificationMessage);
-        }
+    await _unitOfWork.TicketRepository.UpdateAsync(ticket);
+    await _unitOfWork.Complete();
+
+    // Send notification
+    var statusArabic = TranslateStatusToArabic(ticket.Status);
+    var notificationMessage =
+        $"تم تغيير حالة التذكرة رقم '{ticket.TicketNumber}' إلى {statusArabic}.";
+    await NotifyTicketCreatorAsync(ticketId, notificationMessage);
+}
 
 private string TranslateStatusToArabic(TicketStatus status)
 {
@@ -410,6 +417,10 @@ private string TranslateStatusToArabic(TicketStatus status)
         TicketStatus.Cancelled  => "ملغاة",
         TicketStatus.Resolved   => "تم حلها",
         TicketStatus.Closed     => "مغلقة",
+        TicketStatus.SentToScopesky =>"ارسلت الى سكوب سكاي",
+        TicketStatus.ReviewedByAdmin =>" قيد مراجعة الأدمن",
+        TicketStatus.AdminReview     => "قيد مراجعة الأدمن", 
+
         _ => "غير معروفة" // fallback if needed
     };
 }

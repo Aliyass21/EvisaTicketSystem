@@ -7,6 +7,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using EVisaTicketSystem.Core.Controllers;
+using EVisaTicketSystem.Services;
 
 namespace EVisaTicketSystem.Api.Controllers
 {
@@ -38,43 +39,25 @@ namespace EVisaTicketSystem.Api.Controllers
 
         // POST: api/notifications/global
         // This endpoint is intended for admins to send a global notification.
-        [HttpPost("global")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> PostGlobalNotification([FromBody] GlobalNotificationDto notificationDto)
-        {
-            // Extract the admin's user ID from claims.
-            var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(adminId))
-            {
-                return Unauthorized("Admin user ID not found.");
-            }
+[HttpPost("global")]
+[Authorize(Roles = "Admin")]
+public async Task<IActionResult> PostGlobalNotification([FromBody] GlobalNotificationDto dto)
+{
+    var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (!Guid.TryParse(adminId, out Guid adminGuid))
+        return BadRequest("Invalid admin user ID.");
 
-            if (!Guid.TryParse(adminId, out Guid adminGuid))
-            {
-                return BadRequest("Invalid admin user ID.");
-            }
+    var notification = new Notification
+    {
+        Message = dto.Message,
+        IsRead = false,
+        UserId = adminGuid,
+    };
 
-            // Create the Notification entity with the admin's ID as the sender.
-            var notification = new Notification
-            {
-                Message = notificationDto.Message,
-                IsRead = false,
-                UserId = adminGuid
-            };
+    await _notificationService.SendGlobalNotificationAsync(notification);
+    return Ok();
+}
 
-            // Persist the notification.
-            _unitOfWork.NotificationRepository.Add(notification);
-            var result = await _unitOfWork.Complete();
-            if (!result)
-            {
-                return StatusCode(500, "Failed to save the global notification");
-            }
-
-            // Broadcast the notification to all connected clients using SendGlobalNotificationAsync.
-            await _notificationService.SendGlobalNotificationAsync(notification);
-
-            return Ok(notification);
-        }
     }
 
     // DTO for global notifications.

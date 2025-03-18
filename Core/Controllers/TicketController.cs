@@ -176,6 +176,21 @@ namespace EVisaTicketSystem.API.Controllers
             await _ticketService.UpdateTicketAsync(id, TicketActionType.Cancelled, notes);
             return NoContent();
         }
+        // POST: api/Ticket/{id}/adminreview (Admin signals that they are reviewing the ticket)
+        [HttpPost("{id}/adminreview")]
+        [Authorize(Policy = "RequireAdminRole")]
+        public async Task<IActionResult> AdminReview(Guid id, [FromBody] string notes)
+        {
+            try
+            {
+                await _ticketService.UpdateTicketAsync(id, TicketActionType.AdminReview, notes);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
         // POST: api/Ticket/{id}/senttoscopesky (Admin sends ticket to ScopeSky)
         [HttpPost("{id}/senttoscopesky")]
