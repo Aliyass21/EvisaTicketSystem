@@ -80,9 +80,10 @@ namespace EVisaTicketSystem.Core.Services
                     }
                     
                     // After ScopeSky marks a ticket as Resolved, Admin reviews it.
-                    if (currentStatus == TicketStatus.Resolved &&
-                        actionType == TicketActionType.AdminReview)
-                        return (TicketStatus.ReviewedByAdmin, TicketStage.ScopeSky);
+            if (currentStatus == TicketStatus.Resolved &&
+            (actionType == TicketActionType.AdminReview || actionType == TicketActionType.StatusChanged))
+            return (TicketStatus.ReviewedByAdmin, TicketStage.ScopeSky);
+
                     break;
 
                     case "ScopeSky":
