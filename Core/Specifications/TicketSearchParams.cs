@@ -6,6 +6,8 @@ public class TicketSearchParams
     public string? TicketNumber { get; set; }
     public string? Title { get; set; }
     public Guid? OfficeId { get; set; }
+    public Guid? CreatedById { get; set; } // New parameter
+
     public TicketStatus? Status { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }

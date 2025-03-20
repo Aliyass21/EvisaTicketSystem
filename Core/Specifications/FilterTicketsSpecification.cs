@@ -13,6 +13,7 @@ public class FilterTicketsSpecification : BaseSpecification<Ticket>
         string? ticketNumber = null,
         string? title = null,
         Guid? officeId = null,
+        Guid? createdById = null, // New parameter
         TicketStatus? status = null,
         DateTime? startDate = null,
         DateTime? endDate = null,
@@ -24,6 +25,8 @@ public class FilterTicketsSpecification : BaseSpecification<Ticket>
             (string.IsNullOrEmpty(ticketNumber) || x.TicketNumber.Contains(ticketNumber)) &&
             (string.IsNullOrEmpty(title) || x.Title.Contains(title)) &&
             (!officeId.HasValue || x.OfficeId == officeId.Value) &&
+            (!createdById.HasValue || x.CreatedById == createdById.Value) && // Added condition
+
             (!status.HasValue || x.Status == status.Value) &&
             (!startDate.HasValue || x.DateCreated >= startDate.Value) &&
             (!endDate.HasValue || x.DateCreated <= endDate.Value))

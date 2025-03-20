@@ -54,6 +54,7 @@ namespace EVisaTicketSystem.API.Controllers
                 ticketNumber: searchParams.TicketNumber,
                 title: searchParams.Title,
                 officeId: searchParams.OfficeId,
+                createdById: searchParams.CreatedById, // Pass the new parameter
                 status: searchParams.Status,
                 startDate: searchParams.StartDate,
                 endDate: searchParams.EndDate,
@@ -207,7 +208,7 @@ namespace EVisaTicketSystem.API.Controllers
         [Authorize(Policy = "RequireAdminRole")]
         public async Task<IActionResult> SendToScopesky(Guid id, [FromBody] string notes)
         {
-            await _ticketService.UpdateTicketAsync(id, TicketActionType.Resolved, notes);
+            await _ticketService.UpdateTicketAsync(id, TicketActionType.SentToScopesky, notes);
             return NoContent();
         }
 

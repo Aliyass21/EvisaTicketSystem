@@ -1,4 +1,5 @@
 using System;
+using EVisaTicketSystem.Core.DTOs;
 using EVisaTicketSystem.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -50,6 +51,48 @@ public class AdminController(UserManager<AppUser> userManager): BaseApiControlle
         if (!result.Succeeded) return BadRequest("Failed to remove from roles");
 
         return Ok(await userManager.GetRolesAsync(user));
+    }
+     // **Edit user details (FullName, Position)**
+    [HttpPut("edit-user/{id}")]
+    public async Task<ActionResult> EditUser(Guid id, [FromBody] EditUserDto model)
+    {
+        var user = await userManager.FindByIdAsync(id.ToString());
+        if (user == null) return NotFound("User not found");
+
+        user.FullName = model.FullName;
+        user.Position = model.Position;
+        user.UserName= model.Username;
+
+        var result = await userManager.UpdateAsync(user);
+        if (!result.Succeeded) return BadRequest("Failed to update user details");
+
+        return Ok(new { message = "User details updated successfully" });
+    }
+
+    // **Edit user password**
+    [HttpPut("change-password/{id}")]
+    public async Task<ActionResult> ChangePassword(Guid id, [FromBody] ChangePasswordDto model)
+    {
+        var user = await userManager.FindByIdAsync(id.ToString());
+        if (user == null) return NotFound("User not found");
+
+        var result = await userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+        if (!result.Succeeded) return BadRequest(result.Errors);
+
+        return Ok(new { message = "Password changed successfully" });
+    }
+
+    // **Delete user**
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteUser(Guid id)
+    {
+        var user = await userManager.FindByIdAsync(id.ToString());
+        if (user == null) return NotFound("User not found");
+
+        var result = await userManager.DeleteAsync(user);
+        if (!result.Succeeded) return BadRequest("Failed to delete user");
+
+        return Ok(new { message = "User deleted successfully" });
     }
 
     

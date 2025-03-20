@@ -59,26 +59,24 @@ namespace EVisaTicketSystem.Core.Services
                     // - Reject it (Rejected) to return to SubAdmin
                     // - Cancel it (Cancelled)
                     if (currentStatus == TicketStatus.AdminReview)
-                    {
-                        if (actionType == TicketActionType.Resolved)
-                            return (TicketStatus.SentToScopesky, TicketStage.ScopeSky);
-                        if (actionType == TicketActionType.Rejected)
-                            return (TicketStatus.Rejected, TicketStage.SubAdmin);
-                        if (actionType == TicketActionType.Cancelled)
-                            return (TicketStatus.Cancelled, TicketStage.SystemAdmin);
-                    }
-                    
+                        {
+                            if (actionType == TicketActionType.SentToScopesky)
+                                return (TicketStatus.SentToScopesky, TicketStage.ScopeSky);
+                            if (actionType == TicketActionType.Rejected)
+                                return (TicketStatus.Rejected, TicketStage.SubAdmin);
+                            if (actionType == TicketActionType.Cancelled)
+                                return (TicketStatus.Cancelled, TicketStage.SystemAdmin);
+                        }
                     // If ticket is in RejectByScopesky state, Admin can:
                     // - Correct it and send it back to ScopeSky (Resolved)
                     // - Or reject it again (Rejected) to return to SubAdmin.
                     if (currentStatus == TicketStatus.RejectByScopesky)
                     {
-                        if (actionType == TicketActionType.Resolved)
+                        if (actionType == TicketActionType.SentToScopesky)
                             return (TicketStatus.SentToScopesky, TicketStage.ScopeSky);
                         if (actionType == TicketActionType.Rejected)
                             return (TicketStatus.Rejected, TicketStage.SubAdmin);
                     }
-                    
                     // After ScopeSky marks a ticket as Resolved, Admin reviews it.
             if (currentStatus == TicketStatus.Resolved &&
             (actionType == TicketActionType.AdminReview || actionType == TicketActionType.StatusChanged))

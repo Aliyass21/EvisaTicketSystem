@@ -18,6 +18,8 @@ namespace EVisaTicketSystem.Core.Enums
         Closed = 14,
 
         // New action type
-        AdminReview = 15
+        AdminReview = 15,
+        SentToScopesky = 16
+
     }
 }
