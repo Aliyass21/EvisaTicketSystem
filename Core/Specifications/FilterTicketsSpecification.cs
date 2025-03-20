@@ -26,7 +26,6 @@ public class FilterTicketsSpecification : BaseSpecification<Ticket>
             (string.IsNullOrEmpty(title) || x.Title.Contains(title)) &&
             (!officeId.HasValue || x.OfficeId == officeId.Value) &&
             (!createdById.HasValue || x.CreatedById == createdById.Value) && // Added condition
-
             (!status.HasValue || x.Status == status.Value) &&
             (!startDate.HasValue || x.DateCreated >= startDate.Value) &&
             (!endDate.HasValue || x.DateCreated <= endDate.Value))
@@ -67,9 +66,11 @@ public class FilterTicketsSpecification : BaseSpecification<Ticket>
                 else
                     ApplyOrderBy(x => x.Priority);
                 break;
-            default:
-                // Default sorting by DateCreated (newest first)
-                ApplyOrderByDescending(x => x.DateCreated);
+            case "datecreated": // Allow sorting DateCreated in both directions
+                if (isDescending)
+                    ApplyOrderByDescending(x => x.DateCreated);
+                else
+                    ApplyOrderBy(x => x.DateCreated);
                 break;
         }
     }
