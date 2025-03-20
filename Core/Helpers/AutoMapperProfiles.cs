@@ -17,6 +17,11 @@ public class AutoMapperProfiles : Profile
             .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy));
         CreateMap<RegisterDto,AppUser>();
         CreateMap<TicketDto,Ticket>();
+        CreateMap<Ticket, TicketDto>();
+        CreateMap<Ticket, TicketDetailDto>()
+            .ForMember(dest => dest.TicketTypeName, opt => opt.MapFrom(src => src.TicketType != null ? src.TicketType.Title : string.Empty))
+            .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedBy != null ? src.CreatedBy.FullName : string.Empty))
+            .ForMember(dest => dest.OfficeName, opt => opt.MapFrom(src => src.Office != null ? src.Office.Title : string.Empty));
         CreateMap<TicketTypeDto,TicketType>();
         CreateMap<TicketAttachmentDto,TicketAttachment>();
         CreateMap<OfficeDto,Office>();

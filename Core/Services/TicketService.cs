@@ -41,6 +41,15 @@ public async Task<(IEnumerable<Ticket> Items, int TotalCount)> SearchTicketsAsyn
     
     return (tickets, totalCount);
 }
+public async Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync()
+{
+    return await _unitOfWork.TicketRepository.GetLastThreeTicketsAsync();
+}
+   public async Task<TicketSummaryDto> GetTicketSummaryForTodayAsync()
+        {
+            return await _unitOfWork.TicketRepository.GetTicketSummaryForTodayAsync();
+        }
+
 private async Task NotifyTicketCreatorAsync(Guid ticketId, string message)
 {
     var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(ticketId);

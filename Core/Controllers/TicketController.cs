@@ -177,6 +177,24 @@ namespace EVisaTicketSystem.API.Controllers
                 await _ticketService.UpdateTicketAsync(id, TicketActionType.Rejected, notes);
                 return NoContent();
             }
+            // GET: api/Ticket/last-three
+            [HttpGet("last-three")]
+            [Authorize]
+            public async Task<ActionResult<IEnumerable<TicketDetailDto>>> GetLastThreeTickets()
+            {
+                var tickets = await _ticketService.GetLastThreeTicketsAsync();
+                var ticketDtos = _mapper.Map<IEnumerable<TicketDetailDto>>(tickets);
+                return Ok(ticketDtos);
+            }
+            
+        [HttpGet("today-summary")]
+        [Authorize]
+        public async Task<ActionResult<TicketSummaryDto>> GetTodayTicketSummary()
+        {
+            var summary = await _ticketService.GetTicketSummaryForTodayAsync();
+            return Ok(summary);
+        }
+
 
 
         // POST: api/Ticket/{id}/cancel (Cancel ticket by SystemAdmin or ScopeSky)

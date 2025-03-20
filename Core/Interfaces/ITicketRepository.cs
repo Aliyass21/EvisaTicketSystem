@@ -20,8 +20,13 @@ namespace EVisaTicketSystem.Core.Interfaces
         Task<Ticket> UpdateAsync(Ticket ticket);
         Task DeleteAsync(Guid id);
         Task<Ticket?> GetLastTicketAsync();
-            Task<IEnumerable<Ticket>> ListAsync(ISpecification<Ticket> spec);
-    Task<int> CountAsync(ISpecification<Ticket> spec);
+        Task<IEnumerable<Ticket>> ListAsync(ISpecification<Ticket> spec);
+        Task<int> CountAsync(ISpecification<Ticket> spec);
+        Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync();
+        Task<TicketSummaryDto> GetTicketSummaryForTodayAsync();
+
+
+    
 
     }
 }

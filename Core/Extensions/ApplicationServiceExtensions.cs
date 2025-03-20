@@ -31,6 +31,8 @@ public static class ApplicationServiceExtensions
        services.AddScoped<TicketStateMachine>(); // Register TicketStateMachine
        //services.AddSingleton<NotificationService>();
        services.AddScoped<NotificationService>();  // <-- changed from .AddSingleton()
+       services.AddScoped<IDashboardRepository, DashboardRepository>();
+
 
        services.AddScoped<INotificationRepository, NotificationRepository>();
 

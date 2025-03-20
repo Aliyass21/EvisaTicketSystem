@@ -17,6 +17,9 @@ namespace EVisaTicketSystem.Core.Interfaces
         Task ApproveTicketAsync(Guid ticketId, string notes);
         Task<Ticket> UpdateTicketDetailsAsync(Guid ticketId, TicketUpdateDto updateDto);
         Task<(IEnumerable<Ticket> Items, int TotalCount)> SearchTicketsAsync(FilterTicketsSpecification spec);
+        Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync();
+        Task<TicketSummaryDto> GetTicketSummaryForTodayAsync();
+
 
 
 
