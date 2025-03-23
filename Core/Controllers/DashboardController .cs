@@ -24,7 +24,7 @@ namespace EVisaTicketSystem.API.Controllers
             var summary = await _dashboardRepository.GetDashboardSummaryAsync();
             return Ok(summary);
         }
-                // GET: api/Dashboard/daily-summary?year=2025&month=3
+                // GET: api/Dashboard/daily-summary-current
         [HttpGet("daily-summary-current")]
         [Authorize]
         public async Task<ActionResult<IEnumerable<DailyTicketSummaryDto>>> GetDailyTicketSummaryForCurrentMonthFromToday()
