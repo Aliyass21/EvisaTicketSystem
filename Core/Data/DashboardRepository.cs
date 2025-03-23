@@ -39,37 +39,33 @@ public async Task<DashboardSummaryDto> GetDashboardSummaryAsync()
     };
 }
 
-        public async Task<IEnumerable<DailyTicketSummaryDto>> GetDailyTicketSummaryForCurrentMonthFromTodayAsync()
+public async Task<IEnumerable<DailyTicketSummaryDto>> GetDailyTicketSummaryForCurrentMonthFromTodayAsync()
+{
+    var todayUtc = DateTime.UtcNow.Date;
+    var startDate = new DateTime(todayUtc.Year, todayUtc.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+    var endDate = new DateTime(todayUtc.Year, todayUtc.Month, todayUtc.Day, 23, 59, 59, DateTimeKind.Utc);
+
+    var groupedTickets = await _context.Tickets
+        .Where(t => t.DateCreated >= startDate && t.DateCreated <= endDate)
+        .GroupBy(t => t.DateCreated.Date)
+        .Select(g => new { Date = g.Key, Count = g.Count() })
+        .ToListAsync();
+
+    var result = new List<DailyTicketSummaryDto>();
+    for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+    {
+        var match = groupedTickets.FirstOrDefault(g => g.Date == date);
+        result.Add(new DailyTicketSummaryDto
         {
-            // Use UTC for consistency.
-            var now = DateTime.UtcNow;
-            var startDate = now.Date; // Today (UTC)
-            // Get the last day of the current month.
-            var daysInMonth = DateTime.DaysInMonth(now.Year, now.Month);
-            var endDate = new DateTime(now.Year, now.Month, daysInMonth, 23, 59, 59, DateTimeKind.Utc);
+            Date = DateTime.SpecifyKind(date, DateTimeKind.Utc),
+            TicketCount = match?.Count ?? 0
+        });
+    }
 
-            // Query tickets created between today and the end of the month,
-            // grouping by the date part only.
-            var groupedTickets = await _context.Tickets
-                .Where(t => t.DateCreated >= startDate && t.DateCreated <= endDate)
-                .GroupBy(t => t.DateCreated.Date)
-                .Select(g => new { Date = g.Key, Count = g.Count() })
-                .ToListAsync();
+    return result;
+}
 
-            // Prepare the result list: iterate through each day from today until the end of the month.
-            var result = new List<DailyTicketSummaryDto>();
-            for (var date = startDate; date <= endDate.Date; date = date.AddDays(1))
-            {
-                var group = groupedTickets.FirstOrDefault(g => g.Date == date);
-                result.Add(new DailyTicketSummaryDto
-                {
-                    Date = date,
-                    TicketCount = group?.Count ?? 0
-                });
-            }
 
-            return result;
-        }
 
     }
 }
