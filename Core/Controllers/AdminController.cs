@@ -52,22 +52,43 @@ public class AdminController(UserManager<AppUser> userManager): BaseApiControlle
 
         return Ok(await userManager.GetRolesAsync(user));
     }
-     // **Edit user details (FullName, Position)**
-    [HttpPut("edit-user/{id}")]
-    public async Task<ActionResult> EditUser(Guid id, [FromBody] EditUserDto model)
+[Authorize(Policy = "RequireAdminRole")]
+[HttpPut("edit-user/{id}")]
+public async Task<ActionResult> EditUser(Guid id, [FromBody] EditUserDto model)
+{
+    var user = await userManager.FindByIdAsync(id.ToString());
+    if (user == null) return NotFound("User not found");
+
+    user.FullName = model.FullName;
+    user.Position = model.Position;
+    user.UserName = model.Username;
+
+    var updateResult = await userManager.UpdateAsync(user);
+    if (!updateResult.Succeeded)
+        return BadRequest(updateResult.Errors);
+
+    if (model.Roles != null)
     {
-        var user = await userManager.FindByIdAsync(id.ToString());
-        if (user == null) return NotFound("User not found");
+        var currentRoles = await userManager.GetRolesAsync(user);
+        var rolesToAdd = model.Roles.Except(currentRoles);
+        var rolesToRemove = currentRoles.Except(model.Roles);
 
-        user.FullName = model.FullName;
-        user.Position = model.Position;
-        user.UserName= model.Username;
+        var addResult = await userManager.AddToRolesAsync(user, rolesToAdd);
+        if (!addResult.Succeeded)
+            return BadRequest(addResult.Errors);
 
-        var result = await userManager.UpdateAsync(user);
-        if (!result.Succeeded) return BadRequest("Failed to update user details");
-
-        return Ok(new { message = "User details updated successfully" });
+        var removeResult = await userManager.RemoveFromRolesAsync(user, rolesToRemove);
+        if (!removeResult.Succeeded)
+            return BadRequest(removeResult.Errors);
     }
+
+    var updatedRoles = await userManager.GetRolesAsync(user);
+    return Ok(new 
+    { 
+        message = "User details and roles updated successfully", 
+        roles = updatedRoles 
+    });
+}
 
     // **Edit user password**
     [HttpPut("change-password/{id}")]
@@ -80,6 +101,30 @@ public class AdminController(UserManager<AppUser> userManager): BaseApiControlle
         if (!result.Succeeded) return BadRequest(result.Errors);
 
         return Ok(new { message = "Password changed successfully" });
+    }
+
+    [Authorize(Policy = "RequireAdminRole")]
+    [HttpPut("reset-password/{id}")]
+    public async Task<ActionResult> ResetPassword(Guid id, [FromBody] ResetPasswordDto model)
+    {
+        if (model.NewPassword != model.ConfirmPassword)
+            return BadRequest("Passwords do not match.");
+
+        var user = await userManager.FindByIdAsync(id.ToString());
+        if (user == null) 
+            return NotFound("User not found");
+
+        // Remove existing password
+        var removeResult = await userManager.RemovePasswordAsync(user);
+        if (!removeResult.Succeeded)
+            return BadRequest(removeResult.Errors);
+        
+        // Add the new password
+        var addResult = await userManager.AddPasswordAsync(user, model.NewPassword);
+        if (!addResult.Succeeded)
+            return BadRequest(addResult.Errors);
+
+        return Ok(new { message = "Password has been reset successfully." });
     }
 
     // **Delete user**

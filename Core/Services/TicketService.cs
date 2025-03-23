@@ -41,14 +41,16 @@ public async Task<(IEnumerable<Ticket> Items, int TotalCount)> SearchTicketsAsyn
     
     return (tickets, totalCount);
 }
-public async Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync()
+public async Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync(Guid userId)
 {
-    return await _unitOfWork.TicketRepository.GetLastThreeTicketsAsync();
+    return await _unitOfWork.TicketRepository.GetLastThreeTicketsAsync(userId);
 }
-   public async Task<TicketSummaryDto> GetTicketSummaryForTodayAsync()
-        {
-            return await _unitOfWork.TicketRepository.GetTicketSummaryForTodayAsync();
-        }
+
+public async Task<TicketSummaryDto> GetTicketSummaryForLast7DaysAsync()
+{
+    return await _unitOfWork.TicketRepository.GetTicketSummaryForLast7DaysAsync();
+}
+
 
 private async Task NotifyTicketCreatorAsync(Guid ticketId, string message)
 {

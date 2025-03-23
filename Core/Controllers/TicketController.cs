@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AutoMapper;
 using EVisaTicketSystem.Core.Controllers;
 using EVisaTicketSystem.Core.Data;
@@ -178,20 +179,27 @@ namespace EVisaTicketSystem.API.Controllers
                 return NoContent();
             }
             // GET: api/Ticket/last-three
-            [HttpGet("last-three")]
-            [Authorize]
-            public async Task<ActionResult<IEnumerable<TicketDetailDto>>> GetLastThreeTickets()
-            {
-                var tickets = await _ticketService.GetLastThreeTicketsAsync();
-                var ticketDtos = _mapper.Map<IEnumerable<TicketDetailDto>>(tickets);
-                return Ok(ticketDtos);
-            }
-            
-        [HttpGet("today-summary")]
+// GET: api/Ticket/last-three
+        [HttpGet("last-three")]
         [Authorize]
-        public async Task<ActionResult<TicketSummaryDto>> GetTodayTicketSummary()
+        public async Task<ActionResult<IEnumerable<TicketDetailDto>>> GetLastThreeTickets()
         {
-            var summary = await _ticketService.GetTicketSummaryForTodayAsync();
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
+
+            var tickets = await _ticketService.GetLastThreeTicketsAsync(userId);
+            var ticketDtos = _mapper.Map<IEnumerable<TicketDetailDto>>(tickets);
+            return Ok(ticketDtos);
+        }
+
+            
+        // GET: api/Ticket/weekly-summary
+        [HttpGet("weekly-summary")]
+        [Authorize]
+        public async Task<ActionResult<TicketSummaryDto>> GetWeeklyTicketSummary()
+        {
+            var summary = await _ticketService.GetTicketSummaryForLast7DaysAsync();
             return Ok(summary);
         }
 

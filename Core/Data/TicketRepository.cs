@@ -111,36 +111,38 @@ public async Task<IEnumerable<Ticket>> GetAllAsync()
                 _context.Tickets.Remove(ticket);
             }
         }
-        public async Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync()
-        {
-            return await _context.Tickets
-                .Include(t => t.TicketType)
-                .Include(t => t.CreatedBy)
-                .Include(t => t.Office)
-                .OrderByDescending(t => t.DateCreated)
-                .Take(3)
-                .ToListAsync();
-        }
+    public async Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync(Guid userId)
+    {
+        return await _context.Tickets
+            .Where(t => t.CreatedById == userId)
+            .OrderByDescending(t => t.DateCreated)
+            .Take(3)
+            .ToListAsync();
+    }
         
-        public async Task<TicketSummaryDto> GetTicketSummaryForTodayAsync()
-        {
-            // Use UTC date or adjust as needed for your application timezone.
-            var today = DateTime.UtcNow.Date;
+public async Task<TicketSummaryDto> GetTicketSummaryForLast7DaysAsync()
+{
+    var today = DateTime.UtcNow.Date;
+    var startDate = today.AddDays(-6);
 
-            var ticketsToday = _context.Tickets.Where(t => t.DateCreated.Date == today);
+    var ticketsLast7 = _context.Tickets
+        .Where(t => t.DateCreated.Date >= startDate && t.DateCreated.Date <= today);
 
-            var newTickets = await ticketsToday.CountAsync(t => t.Status == TicketStatus.New);
-            var closedTickets = await ticketsToday.CountAsync(t => t.Status == TicketStatus.Closed);
-            // All other statuses will be considered as "being worked on"
-            var inProgressTickets = await ticketsToday.CountAsync(t => t.Status != TicketStatus.New && t.Status != TicketStatus.Closed);
+    var newTickets = await ticketsLast7.CountAsync(t => t.Status == TicketStatus.New);
+    var closedTickets = await ticketsLast7.CountAsync(t => t.Status == TicketStatus.Closed);
+    var inProgressTickets = await ticketsLast7.CountAsync(t =>
+        t.Status != TicketStatus.New &&
+        t.Status != TicketStatus.Closed &&
+        t.Status != TicketStatus.Cancelled);
 
-            return new TicketSummaryDto
-            {
-                NewTickets = newTickets,
-                ClosedTickets = closedTickets,
-                InProgressTickets = inProgressTickets
-            };
-        }
+    return new TicketSummaryDto
+    {
+        NewTickets = newTickets,
+        ClosedTickets = closedTickets,
+        InProgressTickets = inProgressTickets
+    };
+}
+
 
 
     }
