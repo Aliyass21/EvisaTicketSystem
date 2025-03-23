@@ -92,6 +92,9 @@ public async Task<ActionResult> EditUser(Guid id, [FromBody] EditUserDto model)
 
     // **Edit user password**
     [HttpPut("change-password/{id}")]
+    [Authorize]
+
+    
     public async Task<ActionResult> ChangePassword(Guid id, [FromBody] ChangePasswordDto model)
     {
         var user = await userManager.FindByIdAsync(id.ToString());

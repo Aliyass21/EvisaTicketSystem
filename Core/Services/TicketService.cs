@@ -41,10 +41,11 @@ public async Task<(IEnumerable<Ticket> Items, int TotalCount)> SearchTicketsAsyn
     
     return (tickets, totalCount);
 }
-public async Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync(Guid userId)
+public async Task<IEnumerable<TicketDetailDto>> GetLastThreeTicketsAsync(Guid userId)
 {
     return await _unitOfWork.TicketRepository.GetLastThreeTicketsAsync(userId);
 }
+
 
 public async Task<TicketSummaryDto> GetTicketSummaryForLast7DaysAsync()
 {

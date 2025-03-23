@@ -111,15 +111,35 @@ public async Task<IEnumerable<Ticket>> GetAllAsync()
                 _context.Tickets.Remove(ticket);
             }
         }
-    public async Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync(Guid userId)
-    {
-        return await _context.Tickets
-            .Where(t => t.CreatedById == userId)
-            .OrderByDescending(t => t.DateCreated)
-            .Take(3)
-            .ToListAsync();
-    }
-        
+public async Task<IEnumerable<TicketDetailDto>> GetLastThreeTicketsAsync(Guid userId)
+{
+    return await _context.Tickets
+        .Where(t => t.CreatedById == userId)
+        .OrderByDescending(t => t.DateCreated)
+        .Take(3)
+        .Select(t => new TicketDetailDto
+        {
+            Id             = t.Id,
+            TicketNumber   = t.TicketNumber,
+            Title          = t.Title,
+            Description    = t.Description,
+            Status         = t.Status,
+            CurrentStage   = t.CurrentStage,
+            Priority       = t.Priority,
+            TicketTypeId   = t.TicketTypeId,
+            TicketTypeName = t.TicketType.Title,
+            CreatedById    = t.CreatedById,
+            CreatedByName  = t.CreatedBy.FullName,
+            AssignedToId   = t.AssignedToId,
+            AssignedToName = t.AssignedTo != null ? t.AssignedTo.FullName : null,
+            OfficeId       = t.OfficeId,
+            OfficeName     = t.Office.Title,
+            CreatedAt      = t.DateCreated,
+            ClosedAt       = t.ClosedAt,
+        })
+        .ToListAsync();
+}
+ 
 public async Task<TicketSummaryDto> GetTicketSummaryForLast7DaysAsync()
 {
     var today = DateTime.UtcNow.Date;

@@ -22,7 +22,7 @@ namespace EVisaTicketSystem.Core.Interfaces
         Task<Ticket?> GetLastTicketAsync();
         Task<IEnumerable<Ticket>> ListAsync(ISpecification<Ticket> spec);
         Task<int> CountAsync(ISpecification<Ticket> spec);
-        Task<IEnumerable<Ticket>> GetLastThreeTicketsAsync(Guid userId);
+        Task<IEnumerable<TicketDetailDto>> GetLastThreeTicketsAsync(Guid userId);
         Task<TicketSummaryDto> GetTicketSummaryForLast7DaysAsync();
 
 
